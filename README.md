@@ -233,6 +233,25 @@ Sites that require authentication read from your **already-logged-in session** i
 node src/cli.mjs boss search --query "backend engineer" --city shanghai --limit 5 --port 9223
 node src/cli.mjs boss inbox --limit 10 --port 9223
 node src/cli.mjs boss reply --index 2 --message "您好，看到贵司的职位很感兴趣" --dry-run --port 9223
+node src/cli.mjs boss profile
+```
+
+`boss profile` reads `config/boss_profile.zh-CN.json` when present. On a clean checkout, it returns a built-in Chinese template with `source: "default-template"` and `configMissing: true` so you can inspect the expected shape before creating your local ignored config file.
+
+Expected default profile shape:
+
+```json
+{
+     "Boss默认沟通语言": "中文",
+     "候选人": {
+          "姓名": "",
+          "当前城市": "",
+          "目标城市": [],
+          "目标岗位": ["后端", "基础设施", "平台工程"],
+          "远程偏好": "中国远程",
+          "年薪底线": 300000
+     }
+}
 ```
 
 ### Barchart — Options flow & quotes

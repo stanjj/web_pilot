@@ -1,5 +1,5 @@
 import { clickPoint, evaluate, insertText, navigate } from "../../core/cdp.mjs";
-import { connectBossPage, selectBossThread, waitForSelectedBossThread } from "./common.mjs";
+import { connectBossPage, ensureBossPageReady, selectBossThread, waitForSelectedBossThread } from "./common.mjs";
 import { formatBossThreadSelectionError, isBossThreadSelectionSafeForSend } from "./thread-selector.mjs";
 
 function toNumber(value, fallback) {
@@ -238,6 +238,7 @@ export async function runBossReply(flags) {
 
   try {
     await navigate(client, "https://www.zhipin.com/web/geek/chat", 3000);
+    await ensureBossPageReady(client, "chat");
     const selection = await selectBossThread(client, { index, name });
     if (!selection?.ok) {
       throw new Error(formatBossThreadSelectionError(selection));

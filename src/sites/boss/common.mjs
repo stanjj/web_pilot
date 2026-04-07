@@ -1,6 +1,75 @@
 import { connectToTarget, createTarget, DEFAULT_PORT, evaluate, findPageTarget } from "../../core/cdp.mjs";
+import { ValidationError } from "../../core/errors.mjs";
 import { autoMinimizeChromeForPort } from "../../core/windows.mjs";
 import { isBossThreadContextMatch, resolveBossThreadSelection } from "./thread-selector.mjs";
+
+function normalizeBossAccessText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+export function getBossAccessIssue(pageState, expectedArea = "chat") {
+  const url = normalizeBossAccessText(pageState?.url);
+  const title = normalizeBossAccessText(pageState?.title);
+  const bodyText = normalizeBossAccessText(pageState?.bodyText || pageState?.bodyPreview || pageState?.textPreview);
+
+  if (
+    /\/web\/user\/?$/i.test(url) ||
+    /注册登录|登录|注册/i.test(title) ||
+    /登录|注册|扫码|验证/i.test(bodyText)
+  ) {
+    return {
+      code: "BOSS_LOGIN_REQUIRED",
+      message: `BOSS ${expectedArea} requires an authenticated browser session`,
+      hint: "Open the shared browser on zhipin.com, complete login or any verification challenge, then retry.",
+    };
+  }
+
+  if (expectedArea === "chat" && !/\/web\/geek\/chat/i.test(url)) {
+    return {
+      code: "BOSS_CHAT_UNAVAILABLE",
+      message: "BOSS chat did not load in the shared browser session",
+      hint: "Open the shared browser and confirm the BOSS chat inbox is reachable for your account, then retry.",
+    };
+  }
+
+  if (expectedArea === "job" && !/\/web\/geek\/job/i.test(url)) {
+    return {
+      code: "BOSS_SEARCH_UNAVAILABLE",
+      message: "BOSS job search did not load in the shared browser session",
+      hint: "Open the shared browser and confirm the BOSS job search page is reachable, then retry.",
+    };
+  }
+
+  return null;
+}
+
+export async function readBossPageState(client) {
+  return evaluate(client, `
+    (() => ({
+      title: document.title || '',
+      url: location.href || '',
+      bodyText: (document.body?.innerText || '').slice(0, 4000)
+    }))()
+  `);
+}
+
+export async function ensureBossPageReady(client, expectedArea = "chat") {
+  const pageState = await readBossPageState(client);
+  const issue = getBossAccessIssue(pageState, expectedArea);
+
+  if (!issue) {
+    return pageState;
+  }
+
+  throw new ValidationError(issue.message, {
+    hint: issue.hint,
+    details: {
+      code: issue.code,
+      url: pageState?.url || "",
+      title: pageState?.title || "",
+    },
+  });
+}
 
 export async function getBossTarget(port = DEFAULT_PORT) {
   const existing = await findPageTarget(

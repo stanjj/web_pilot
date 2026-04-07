@@ -1,5 +1,5 @@
 import { evaluate, navigate } from "../../core/cdp.mjs";
-import { connectBossPage } from "./common.mjs";
+import { connectBossPage, ensureBossPageReady } from "./common.mjs";
 
 const CITY_CODES = {
   all: "100010000",
@@ -21,6 +21,22 @@ function resolveCity(input) {
   return CITY_CODES[key] || CITY_CODES.beijing;
 }
 
+export function normalizeBossSearchResult(result) {
+  if (result?.ok || !result) {
+    return result;
+  }
+
+  if (Number(result.code) === 37 || /环境存在异常/.test(String(result.message || ""))) {
+    return {
+      ...result,
+      error: "BOSS search is blocked by login or environment verification",
+      hint: "Open the shared browser on zhipin.com, complete login or any verification challenge, then retry.",
+    };
+  }
+
+  return result;
+}
+
 export async function searchBossJobs({ query, city, limit = 15, page = 1, port = 9223 }) {
   if (!query) {
     throw new Error("Missing required --query");
@@ -33,6 +49,7 @@ export async function searchBossJobs({ query, city, limit = 15, page = 1, port =
   try {
     const webUrl = `https://www.zhipin.com/web/geek/job?query=${encodeURIComponent(query)}&city=${cityCode}`;
     await navigate(client, webUrl, 3000);
+    await ensureBossPageReady(client, "job");
 
     const apiUrl = new URL("https://www.zhipin.com/wapi/zpgeek/search/joblist.json");
     apiUrl.searchParams.set("scene", "1");
@@ -79,7 +96,7 @@ export async function searchBossJobs({ query, city, limit = 15, page = 1, port =
     `;
 
     const result = await evaluate(client, expression);
-    return result;
+    return normalizeBossSearchResult(result);
   } finally {
     await client.close();
   }

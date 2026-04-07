@@ -1,5 +1,5 @@
 import { evaluate, navigate } from "../../core/cdp.mjs";
-import { connectBossPage } from "./common.mjs";
+import { connectBossPage, ensureBossPageReady } from "./common.mjs";
 
 const FILTER_ALL = "\u5168\u90e8";
 const FILTER_UNREAD = "\u672a\u8bfb";
@@ -199,6 +199,7 @@ async function loadInbox(flags) {
 
   try {
     await navigate(client, "https://www.zhipin.com/web/geek/chat", 3000);
+    await ensureBossPageReady(client, "chat");
     const snapshot = await fetchInboxSnapshot(client);
     if (!snapshot?.ok) {
       throw new Error(snapshot?.error || "Failed to read BOSS inbox");
@@ -216,6 +217,7 @@ async function loadUnreadInbox(flags) {
 
   try {
     await navigate(client, "https://www.zhipin.com/web/geek/chat", 3000);
+    await ensureBossPageReady(client, "chat");
     const switched = await switchInboxFilter(client, FILTER_UNREAD);
     if (!switched?.ok) {
       throw new Error(switched?.error || "Failed to switch to unread filter");
