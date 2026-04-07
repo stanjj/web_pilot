@@ -9,7 +9,7 @@
 
 Most browser automation tools spin up a cold, headless, easily-blocked browser for every task. **web-pilot doesn't.**
 
-| Every other tool | web-pilot |
+| Traditional approach | web-pilot |
 |---|---|
 | New browser per script | **One persistent Chrome, reused forever** |
 | Login again every run | **Already logged in — your real session** |
