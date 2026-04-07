@@ -1,31 +1,32 @@
 # web-pilot
 
-> **One Chrome. 40+ sites. Every session, every tab, every login — already yours.**
+[![npm](https://img.shields.io/npm/v/web-pilot?color=blue)](https://www.npmjs.com/package/web-pilot)
+[![stars](https://img.shields.io/github/stars/stanjj/web_pilot?style=social)](https://github.com/stanjj/web_pilot)
+[![license](https://img.shields.io/github/license/stanjj/web_pilot)](LICENSE)
+[![node](https://img.shields.io/node/v/web-pilot)](package.json)
 
-CDP-first browser automation toolkit built for agents and power users who live in a browser all day. No Playwright. No puppeteer wrappers. Direct Chrome DevTools Protocol over a single long-lived shared session — the way the browser was always meant to be driven.
+> **One persistent Chrome. 40+ sites. Your real sessions — already logged in.**
 
-```powershell
+Most browser automation tools spin up a cold, headless, easily-blocked browser for every task. **web-pilot doesn't.**
+
+| Every other tool | web-pilot |
+|---|---|
+| New browser per script | **One persistent Chrome, reused forever** |
+| Login again every run | **Already logged in — your real session** |
+| Headless, easily fingerprinted | **Your real profile + anti-detection patches** |
+| API wrappers that break | **Direct CDP — no middleman, no abstractions** |
+| One site per tool | **40+ sites, one CLI, zero cold-start** |
+
+```sh
 node src/cli.mjs browser ensure --port 9223   # one-time: start the shared browser
 node src/cli.mjs barchart quote --symbol QQQ  # run anything, instantly
+node src/cli.mjs --json twitter timeline --limit 20 | jq '.data[].text'
 ```
 
 ---
 
-## Why This Exists
-
-Most browser automation toolkits spin up a new browser per task — cold, cookieless, easily blocked. `web-pilot` is different:
-
-| Conventional Approach | web-pilot |
-|---|---|
-| New browser per script | **One persistent Chrome, reused forever** |
-| Login again every run | **Already logged in — your real session** |
-| Headless, easily fingerprinted | **Your real profile, anti-detection patches applied** |
-| API wrappers that break | **Direct DOM + CDP — no middleman** |
-| One site per tool | **40+ sites, one CLI** |
-
----
-
 ## Quickstart
+
 
 ```powershell
 # 1. Start the shared browser (once per machine session)
