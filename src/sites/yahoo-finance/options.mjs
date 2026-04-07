@@ -76,10 +76,44 @@ export function parseYahooFinanceOptionsResponse({ symbol, type, expiration, lim
   };
 }
 
+/**
+ * Accept a Yahoo Finance expiration as either:
+ *   - a UNIX timestamp (number or numeric string)
+ *   - a YYYY-MM-DD date string (converted to midnight UTC timestamp)
+ * Returns null if the input is null/undefined.
+ * Throws if the input is non-null but unparseable.
+ */
+export function parseYahooExpiration(value) {
+  if (value == null) return null;
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  // Numeric: treat as UNIX timestamp
+  if (/^\d+$/.test(raw)) {
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) throw new Error("Invalid --expiration. Use a UNIX timestamp or YYYY-MM-DD");
+    return ts;
+  }
+
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const ms = Date.UTC(
+      Number(raw.slice(0, 4)),
+      Number(raw.slice(5, 7)) - 1,
+      Number(raw.slice(8, 10)),
+    );
+    if (!Number.isFinite(ms)) throw new Error(`Invalid date: ${raw}`);
+    return Math.floor(ms / 1000);
+  }
+
+  throw new Error("Invalid --expiration. Use a UNIX timestamp or YYYY-MM-DD");
+}
+
 export async function runYahooFinanceOptions(flags) {
   const symbol = String(flags.symbol || "").trim().toUpperCase();
   const type = String(flags.type || "calls").trim().toLowerCase();
-  const expiration = flags.expiration != null ? Number(flags.expiration) : null;
+  const expiration = parseYahooExpiration(flags.expiration ?? null);
   const limit = Number(flags.limit ?? 20);
 
   if (!symbol) {
@@ -87,9 +121,6 @@ export async function runYahooFinanceOptions(flags) {
   }
   if (!["calls", "puts"].includes(type)) {
     throw new Error("Invalid --type. Use calls or puts");
-  }
-  if (flags.expiration != null && !Number.isFinite(expiration)) {
-    throw new Error("Invalid --expiration. Use a Yahoo expiration UNIX timestamp");
   }
 
   const port = getYahooFinancePort(flags.port);

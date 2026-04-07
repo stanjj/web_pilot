@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseYahooFinanceOptionsResponse } from "../src/sites/yahoo-finance/options.mjs";
+import { parseYahooExpiration, parseYahooFinanceOptionsResponse } from "../src/sites/yahoo-finance/options.mjs";
 
 const OPTIONS_TEXT = JSON.stringify({
   optionChain: {
@@ -124,4 +124,26 @@ test("parseYahooFinanceOptionsResponse preserves error output shape", () => {
       body: "server error",
     },
   );
+});
+
+test("parseYahooExpiration handles UNIX timestamp", () => {
+  assert.equal(parseYahooExpiration(1713484800), 1713484800);
+  assert.equal(parseYahooExpiration("1713484800"), 1713484800);
+});
+
+test("parseYahooExpiration converts YYYY-MM-DD to UTC midnight timestamp", () => {
+  const ts = parseYahooExpiration("2024-04-19");
+  assert.equal(typeof ts, "number");
+  assert.equal(ts, 1713484800);
+});
+
+test("parseYahooExpiration returns null for null/undefined", () => {
+  assert.equal(parseYahooExpiration(null), null);
+  assert.equal(parseYahooExpiration(undefined), null);
+  assert.equal(parseYahooExpiration(""), null);
+});
+
+test("parseYahooExpiration throws on invalid input", () => {
+  assert.throws(() => parseYahooExpiration("not-a-date"), /Invalid --expiration/);
+  assert.throws(() => parseYahooExpiration("2024/04/19"), /Invalid --expiration/);
 });

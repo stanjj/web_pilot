@@ -1,4 +1,4 @@
-# cdp_everything
+# web-pilot
 
 > **One Chrome. 40+ sites. Every session, every tab, every login — already yours.**
 
@@ -13,9 +13,9 @@ node src/cli.mjs barchart quote --symbol QQQ  # run anything, instantly
 
 ## Why This Exists
 
-Most browser automation toolkits spin up a new browser per task — cold, cookieless, easily blocked. `cdp_everything` is different:
+Most browser automation toolkits spin up a new browser per task — cold, cookieless, easily blocked. `web-pilot` is different:
 
-| Conventional Approach | cdp_everything |
+| Conventional Approach | web-pilot |
 |---|---|
 | New browser per script | **One persistent Chrome, reused forever** |
 | Login again every run | **Already logged in — your real session** |

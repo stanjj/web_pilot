@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseBarchartOptionsResponse } from "../src/sites/barchart/options.mjs";
+import { classifyMoneyness, parseBarchartOptionsResponse } from "../src/sites/barchart/options.mjs";
 
 const OPTIONS_TEXT = JSON.stringify({
   data: [
@@ -91,4 +91,49 @@ test("parseBarchartOptionsResponse preserves login failures", () => {
       body: "forbidden",
     },
   );
+});
+
+test("parseBarchartOptionsResponse filters by expiration date", () => {
+  const text = JSON.stringify({
+    data: [
+      { raw: { strikePrice: 190, optionType: "Call", expirationDate: "2026-04-17", percentFromLast: 0.02, bidPrice: 2.2, askPrice: 2.4 } },
+      { raw: { strikePrice: 195, optionType: "Call", expirationDate: "2026-04-24", percentFromLast: 0.05, bidPrice: 1.0, askPrice: 1.2 } },
+    ],
+  });
+
+  const result = parseBarchartOptionsResponse({
+    symbol: "QQQ", type: "Call", limit: 10, expiration: "2026-04-17", ok: true, status: 200, text,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 1);
+  assert.equal(result.items[0].expiration, "2026-04-17");
+});
+
+test("parseBarchartOptionsResponse filters by strike range", () => {
+  const text = JSON.stringify({
+    data: [
+      { raw: { strikePrice: 180, optionType: "Call", expirationDate: "2026-04-17", percentFromLast: 0.1 } },
+      { raw: { strikePrice: 195, optionType: "Call", expirationDate: "2026-04-17", percentFromLast: 0.03 } },
+      { raw: { strikePrice: 210, optionType: "Call", expirationDate: "2026-04-17", percentFromLast: 0.15 } },
+    ],
+  });
+
+  const result = parseBarchartOptionsResponse({
+    symbol: "QQQ", type: "Call", limit: 10, strikeMin: 185, strikeMax: 200, ok: true, status: 200, text,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 1);
+  assert.equal(result.items[0].strike, 195);
+});
+
+test("classifyMoneyness returns correct classification", () => {
+  assert.equal(classifyMoneyness(100, 100, "Call"), "atm");
+  assert.equal(classifyMoneyness(95, 100, "Call"), "itm");
+  assert.equal(classifyMoneyness(105, 100, "Call"), "otm");
+  assert.equal(classifyMoneyness(95, 100, "Put"), "otm");
+  assert.equal(classifyMoneyness(105, 100, "Put"), "itm");
+  assert.equal(classifyMoneyness(null, 100, "Call"), null);
+  assert.equal(classifyMoneyness(100, 0, "Call"), null);
 });

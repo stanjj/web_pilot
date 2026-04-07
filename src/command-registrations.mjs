@@ -31,12 +31,13 @@ const USAGE = {
   "antigravity:send":         "node src/cli.mjs antigravity send --text <text>",
   "antigravity:watch":        "node src/cli.mjs antigravity watch [--port 9223]",
   // barchart
-  "barchart:quote":       "node src/cli.mjs barchart quote --symbol QQQ [--port 9223]",
-  "barchart:options":     "node src/cli.mjs barchart options --symbol QQQ [--type Call] [--limit 20] [--port 9223]",
-  "barchart:greeks":      "node src/cli.mjs barchart greeks --symbol QQQ [--expiration YYYY-MM-DD] [--limit 10] [--port 9223]",
-  "barchart:flow":        "node src/cli.mjs barchart flow [--type all|call|put] [--limit 20] [--port 9223]",
-  "barchart:flow-symbol": "node src/cli.mjs barchart flow-symbol --symbol QQQ [--type all|call|put] [--limit 20] [--port 9223]",
-  "barchart:technicals":  "node src/cli.mjs barchart technicals --symbol QQQ [--port 9223]",
+  "barchart:quote":          "node src/cli.mjs barchart quote --symbol QQQ [--port 9223]",
+  "barchart:options":        "node src/cli.mjs barchart options --symbol QQQ [--type Call|Put] [--limit 20] [--expiration YYYY-MM-DD] [--strike-min <n>] [--strike-max <n>] [--moneyness atm|itm|otm] [--port 9223]",
+  "barchart:greeks":         "node src/cli.mjs barchart greeks --symbol QQQ [--expiration YYYY-MM-DD] [--limit 10] [--port 9223]",
+  "barchart:flow":           "node src/cli.mjs barchart flow [--type all|call|put] [--limit 20] [--port 9223]",
+  "barchart:flow-symbol":    "node src/cli.mjs barchart flow-symbol --symbol QQQ [--type all|call|put] [--limit 20] [--port 9223]",
+  "barchart:technicals":     "node src/cli.mjs barchart technicals --symbol QQQ [--port 9223]",
+  "barchart:put-call-ratio": "node src/cli.mjs barchart put-call-ratio --symbol QQQ [--expiration YYYY-MM-DD] [--port 9223]",
   // bbc
   "bbc:news": "node src/cli.mjs bbc news [--limit 20] [--port 9223]",
   // bilibili
@@ -63,8 +64,10 @@ const USAGE = {
   "boss:inbox":          "node src/cli.mjs boss inbox [--limit 10] [--port 9223]",
   "boss:unread-count":   "node src/cli.mjs boss unread-count [--port 9223]",
   "boss:unread-by-thread": "node src/cli.mjs boss unread-by-thread [--limit 20] [--port 9223]",
-  "boss:thread":         "node src/cli.mjs boss thread (--index <n> | --name <text>) [--messages 20] [--port 9223]",
-  "boss:reply":          "node src/cli.mjs boss reply (--index <n> | --name <text>) --message <text> [--dry-run] [--send] [--port 9223]",
+  "boss:thread":        "node src/cli.mjs boss thread (--index <n> | --name <text>) [--messages 20] [--port 9223]",
+  "boss:reply":         "node src/cli.mjs boss reply (--index <n> | --name <text>) --message <text> [--dry-run] [--send] [--port 9223]",
+  "boss:open-thread":   "node src/cli.mjs boss open-thread (--index <n> | --name <text>) [--port 9223]",
+  "boss:login-state":   "node src/cli.mjs boss login-state [--area home|chat|search|all] [--port 9223]",
   // chatgpt
   "chatgpt:status": "node src/cli.mjs chatgpt status [--port 9223]",
   "chatgpt:read":   "node src/cli.mjs chatgpt read [--port 9223]",
@@ -295,9 +298,12 @@ const USAGE = {
   "xueqiu:stock":      "node src/cli.mjs xueqiu stock --symbol <symbol> [--port 9223]",
   "xueqiu:watchlist":  "node src/cli.mjs xueqiu watchlist [--category 1|2|3] [--limit 20] [--port 9223]",
   // yahoo-finance
-  "yahoo-finance:quote":    "node src/cli.mjs yahoo-finance quote --symbol QQQ [--port 9223]",
-  "yahoo-finance:catalyst": "node src/cli.mjs yahoo-finance catalyst --symbol QQQ [--limit 5] [--port 9223]",
-  "yahoo-finance:options":  "node src/cli.mjs yahoo-finance options --symbol QQQ [--type calls|puts] [--limit 20] [--expiration UNIX_TS] [--port 9223]",
+  "yahoo-finance:quote":          "node src/cli.mjs yahoo-finance quote --symbol QQQ [--port 9223]",
+  "yahoo-finance:catalyst":       "node src/cli.mjs yahoo-finance catalyst --symbol QQQ [--limit 5] [--port 9223]",
+  "yahoo-finance:options":        "node src/cli.mjs yahoo-finance options --symbol QQQ [--type calls|puts] [--limit 20] [--expiration YYYY-MM-DD|UNIX_TS] [--port 9223]",
+  "yahoo-finance:chain-snapshot": "node src/cli.mjs yahoo-finance chain-snapshot --symbol QQQ [--limit 20] [--expiration YYYY-MM-DD|UNIX_TS] [--port 9223]",
+  "yahoo-finance:atm":            "node src/cli.mjs yahoo-finance atm --symbol QQQ [--atm-window 5] [--expiration YYYY-MM-DD|UNIX_TS] [--port 9223]",
+  "yahoo-finance:compare":        "node src/cli.mjs yahoo-finance compare [--symbols SPY,QQQ,AAPL] [--symbol <extra>] [--port 9223]",
   // youtube
   "youtube:search":              "node src/cli.mjs youtube search --query <text> [--limit 20] [--port 9223]",
   "youtube:tabs":                "node src/cli.mjs youtube tabs [--port 9223]",
@@ -419,6 +425,7 @@ export function buildRegistry() {
   registerSimple(reg, "barchart", "flow", "./sites/barchart/flow.mjs", "runBarchartFlow", { category: "finance" });
   registerSimple(reg, "barchart", "flow-symbol", "./sites/barchart/flow-symbol.mjs", "runBarchartFlowSymbol", { category: "finance" });
   registerSimple(reg, "barchart", "technicals", "./sites/barchart/technicals.mjs", "runBarchartTechnicals", { category: "finance" });
+  registerSimple(reg, "barchart", "put-call-ratio", "./sites/barchart/put-call-ratio.mjs", "runBarchartPutCallRatio", { category: "finance" });
 
   // ── bilibili ───────────────────────────────────────────────────
 
@@ -525,6 +532,9 @@ export function buildRegistry() {
   registerSimple(reg, "yahoo-finance", "quote", "./sites/yahoo-finance/quote.mjs", "runYahooFinanceQuote", { category: "finance" });
   registerSimple(reg, "yahoo-finance", "catalyst", "./sites/yahoo-finance/catalyst.mjs", "runYahooFinanceCatalyst", { category: "finance" });
   registerSimple(reg, "yahoo-finance", "options", "./sites/yahoo-finance/options.mjs", "runYahooFinanceOptions", { category: "finance" });
+  registerSimple(reg, "yahoo-finance", "chain-snapshot", "./sites/yahoo-finance/chain-snapshot.mjs", "runYahooFinanceChainSnapshot", { category: "finance" });
+  registerSimple(reg, "yahoo-finance", "atm", "./sites/yahoo-finance/chain-snapshot.mjs", "runYahooFinanceAtm", { category: "finance" });
+  registerSimple(reg, "yahoo-finance", "compare", "./sites/yahoo-finance/compare.mjs", "runYahooFinanceCompare", { category: "finance" });
 
   // ── hackernews ─────────────────────────────────────────────────
 
@@ -903,6 +913,8 @@ export function buildRegistry() {
   });
   registerSimple(reg, "boss", "thread", "./sites/boss/thread.mjs", "runBossThread", { category: "jobs" });
   registerSimple(reg, "boss", "reply", "./sites/boss/reply.mjs", "runBossReply", { category: "jobs", dryRunSupported: true });
+  registerSimple(reg, "boss", "open-thread", "./sites/boss/open-thread.mjs", "runBossOpenThread", { category: "jobs" });
+  registerSimple(reg, "boss", "login-state", "./sites/boss/login-state.mjs", "runBossLoginState", { category: "jobs" });
 
   return reg;
 }

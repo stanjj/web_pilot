@@ -1,6 +1,6 @@
 # TODO
 
-This file tracks the next work for `cdp_everything`.
+This file tracks the next work for `web-pilot`.
 
 ## Goals
 
@@ -42,10 +42,10 @@ This file tracks the next work for `cdp_everything`.
 Goal: make BOSS fully practical from this repo.
 
 - [x] Add `boss reply` to send a message in the active thread.
-- [ ] Add `boss open-thread` by index/name without needing a separate read command first.
+- [x] Add `boss open-thread` by index/name without needing a separate read command first.
 - [x] Add `boss unread-count` extraction from the left conversation list.
 - [x] Add `boss unread-by-thread` extraction.
-- [ ] Add `boss mark-needs-reply` style logic output for triage.
+- [x] Add `boss mark-needs-reply` style logic output for triage.
 - [ ] Improve thread matching:
   - exact company
   - exact recruiter
@@ -54,7 +54,7 @@ Goal: make BOSS fully practical from this repo.
   - system prompts
   - attachments/resume hints
   - placeholder items like `您正在与Boss...沟通`
-- [ ] Add explicit login-state detection for BOSS home/chat/search pages.
+- [x] Add explicit login-state detection for BOSS home/chat/search pages.
 - [ ] Add a one-command workflow for:
   - list recent chats
   - identify reply-needed threads
@@ -65,38 +65,38 @@ Goal: make BOSS fully practical from this repo.
 
 ### Barchart
 
-- [ ] Add expiration selection for `barchart options`.
-- [ ] Add contract filtering by:
+- [x] Add expiration selection for `barchart options`.
+- [x] Add contract filtering by:
   - call/put
   - expiry
   - strike range
   - moneyness
 - [ ] Add symbol-specific flow analysis workflow instead of only global unusual-flow scans.
-- [ ] Add a `barchart flow-symbol` command.
+- [x] Add a `barchart flow-symbol` command.
 - [ ] Add better interpretation fields for flow:
   - premium rank
   - volume/open-interest ratio
   - near-ATM flag
   - near-expiry flag
-- [ ] Add `put-call-ratio` extraction.
-- [ ] Add `gamma-exposure` extraction.
-- [ ] Add `max-pain` extraction.
+- [x] Add `put-call-ratio` extraction.
+- [x] Add `gamma-exposure` extraction.
+- [x] Add `max-pain` extraction.
 - [ ] Add `vol-skew` extraction.
 - [ ] Add a compact summary mode for fast market checks.
 
 ### Yahoo Finance
 
-- [ ] Add expiration selection for `yahoo-finance options`.
+- [x] Add expiration selection for `yahoo-finance options`.
 - [ ] Add quote fallback parsing if the current page/API shape changes.
-- [ ] Add richer chain output:
+- [x] Add richer chain output:
   - implied volatility
   - open interest
   - volume
   - bid/ask spread quality
-- [ ] Add simple summary commands:
+- [x] Add simple summary commands:
   - nearest expiry chain snapshot
   - ATM options snapshot
-- [ ] Add a small compare mode for `SPY` vs `QQQ` vs a single stock.
+- [x] Add a small compare mode for `SPY` vs `QQQ` vs a single stock.
 
 ### Xueqiu
 
