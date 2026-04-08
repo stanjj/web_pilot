@@ -1,6 +1,20 @@
 import { buildRegistry } from "../command-registrations.mjs";
 import manifest from "../sites/manifest.json" with { type: "json" };
 
+function enrichSiteEntry(entry, commands) {
+  if (entry?.site !== "tradingview") {
+    return entry;
+  }
+
+  return {
+    ...entry,
+    loginRequired: null,
+    loginMode: "mixed",
+    publicCommands: commands.filter((action) => action === "status" || action === "quote"),
+    loginRequiredCommands: commands.filter((action) => action === "historical-flow" || action === "live-flow"),
+  };
+}
+
 export async function runSitesCoverage() {
   const registry = buildRegistry();
   const allCommands = registry.listAll();
@@ -13,14 +27,14 @@ export async function runSitesCoverage() {
     .map((site) => {
       const commands = registry.listBySite(site);
       const meta = manifestMap.get(site) || {};
-      return {
+      return enrichSiteEntry({
         site,
         status: meta.status ?? "unknown",
         loginRequired: meta.loginRequired ?? null,
         notes: meta.notes ?? "",
         commandCount: commands.length,
         commands: commands.map((cmd) => cmd.action).sort(),
-      };
+      }, commands.map((cmd) => cmd.action).sort());
     });
 
   const coreSites = registrySites

@@ -19,6 +19,7 @@ Most browser automation tools spin up a cold, headless, easily-blocked browser f
 
 ```sh
 node src/cli.mjs browser ensure --port 9223   # one-time: start the shared browser
+node src/cli.mjs browser smoke --port 9223    # verify CDP/attach/minimize/tab-cap
 node src/cli.mjs barchart quote --symbol QQQ  # run anything, instantly
 node src/cli.mjs --json twitter timeline --limit 20 | jq '.data[].text'
 ```
@@ -32,18 +33,26 @@ node src/cli.mjs --json twitter timeline --limit 20 | jq '.data[].text'
 # 1. Start the shared browser (once per machine session)
 node src/cli.mjs browser ensure --port 9223 --profile agent
 
-# 2. Run any command immediately
+# 2. Smoke-check the shared browser when needed
+node src/cli.mjs browser smoke --port 9223
+
+# 3. Run any command immediately
 node src/cli.mjs hackernews top --limit 10 --port 9223
 node src/cli.mjs barchart quote --symbol QQQ --port 9223
 node src/cli.mjs xueqiu hot --limit 20 --port 9223
 
-# 3. Machine-readable output for agents/scripts
+# 4. Machine-readable output for agents/scripts
 node src/cli.mjs --json barchart flow --type unusual --limit 10 --port 9223
 
-# 4. See everything available
+# 5. Start the MCP server for Claude Desktop / Cursor / Continue
+npm run mcp:start
+
+# 6. See everything available
 node src/cli.mjs sites list
 node src/cli.mjs sites coverage
 ```
+
+MCP setup details live in `docs/mcp-setup.md`.
 
 ---
 
@@ -58,6 +67,7 @@ node src/cli.mjs sites coverage
 | **xueqiu** | No | `quote`, `hot`, `watchlist` |
 | **marketbeat** | No | `news`, unusual options activity |
 | **insiderfinance** | Yes | Options flow data |
+| **tradingview** | Yes | `status`, `quote` on public pages; `historical-flow`, `live-flow` via Pineify |
 | **pineify** | Yes | TradingView-linked options flow |
 | **unusual-whales** | Yes | Dark pool & options flow |
 | **whalestream** | Yes | Whale options news & summary |
@@ -204,6 +214,7 @@ src/
 - Tab limit: **15** (set `CDP_EVERYTHING_MAX_TABS=N` to change). Oldest non-system tab auto-evicted
 - Window auto-minimizes after attach. Set `CDP_EVERYTHING_AUTO_MINIMIZE=0` to keep visible
 - Profile state lives in `profiles/<name>/` — git-ignored, never committed
+- `browser smoke` verifies CDP reachability, attachability, minimization, and tab-cap enforcement in one command
 
 ```powershell
 # Pre-open specific URLs at launch
@@ -219,8 +230,10 @@ Sites that require authentication read from your **already-logged-in session** i
 
 | Needs Login | Sites |
 |:---:|---|
-| **Yes** | boss, twitter, discord-app, bilibili, wechat, feishu, notion, chatgpt, grok, cursor, codex, chatwise, antigravity, linkedin, xiaohongshu, neteasemusic, weread, jimeng, insiderfinance, pineify, unusual-whales, whalestream |
+| **Yes** | boss, twitter, discord-app, bilibili, wechat, feishu, notion, chatgpt, grok, cursor, codex, chatwise, antigravity, linkedin, xiaohongshu, neteasemusic, weread, jimeng, insiderfinance, pineify, tradingview, unusual-whales, whalestream |
 | **No** | hackernews, barchart, yahoo-finance, xueqiu, marketbeat, reddit, v2ex, linux-do, zhihu, weibo, youtube, bbc, reuters, apple-podcasts, xiaoyuzhou, coupang, shopback, smzdm, ctrip |
+
+TradingView `status` and `quote` work against public TradingView pages. `historical-flow` and `live-flow` still use the logged-in Pineify flow endpoints behind the scenes, so keep the shared browser session signed in there before running those flow commands.
 
 > For login-required sites: open the shared browser, log in manually once, then use the CLI freely.
 
@@ -295,6 +308,8 @@ node src/cli.mjs whalestream summary --port 9223
 
 # Chinese market sentiment
 node src/cli.mjs xueqiu hot --limit 20 --port 9223
+node src/cli.mjs tradingview quote --symbol AAPL --exchange NASDAQ --port 9223
+node src/cli.mjs tradingview historical-flow --symbol NVDA --limit 10 --port 9223
 node src/cli.mjs weibo hot --port 9223
 node src/cli.mjs zhihu hot --port 9223
 ```

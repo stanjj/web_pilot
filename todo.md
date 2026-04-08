@@ -16,20 +16,21 @@ This file tracks the next work for `web-pilot`.
 - Page-tab limit is enforced at `15`.
 - Some sites are genuinely usable.
 - Some sites only have `status`/login detection or are blocked by auth walls, rate limits, or anti-bot checks.
+- MCP server added (`src/mcp-server.mjs`): 271 tools registered, stdio transport, works with Claude Desktop / Cursor / Continue / Cline.
 
 ## Priority 0: Keep The Core Stable
 
 - [ ] Verify `browser ensure` behavior from a cold start after a full Chrome shutdown.
 - [ ] Verify shared browser reuse when multiple site commands run sequentially.
 - [ ] Verify the tab-closing policy only closes safe non-system pages.
-- [ ] Add a small smoke test command that checks:
+- [x] Add a small smoke test command that checks:
   - CDP connectivity
   - shared browser attach
   - window minimization
   - tab count enforcement
 - [ ] Confirm all commands behave correctly if the browser is already minimized.
 - [ ] Confirm behavior when the shared browser profile is missing or corrupted.
-- [ ] Handle the case where the CDP endpoint is alive but no attachable page targets exist.
+- [x] Handle the case where the CDP endpoint is alive but no attachable page targets exist.
 - [ ] Add better error messages for:
   - browser not running
   - login required
@@ -59,7 +60,8 @@ Goal: make BOSS fully practical from this repo.
   - list recent chats
   - identify reply-needed threads
   - open one thread
-- [ ] Add safer reply-mode guardrails so a send action is never triggered by a read command.
+- [x] Add `boss triage` — single-session workflow: load inbox, open top needs-reply thread, return full context + nextStep hint
+- [x] Add safer reply-mode guardrails so a send action is never triggered by a read command.
 
 ## Priority 2: Market Sites
 

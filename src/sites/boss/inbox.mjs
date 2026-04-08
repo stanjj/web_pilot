@@ -161,6 +161,7 @@ function needsReply(item) {
 }
 
 export {
+  fetchInboxSnapshot,
   normalizeInbox,
   normalizeBossNeedsReply,
   normalizeBossInboxView,

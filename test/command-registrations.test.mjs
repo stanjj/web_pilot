@@ -3,6 +3,21 @@ import test from "node:test";
 
 import { buildRegistry } from "../src/command-registrations.mjs";
 
+const NEW_COMMAND_HANDLERS = [
+  ["../src/commands/browser-smoke.mjs", "runBrowserSmoke"],
+  ["../src/sites/boss/open-thread.mjs", "runBossOpenThread"],
+  ["../src/sites/boss/login-state.mjs", "runBossLoginState"],
+  ["../src/sites/boss/triage.mjs", "runBossTriage"],
+  ["../src/sites/barchart/put-call-ratio.mjs", "runBarchartPutCallRatio"],
+  ["../src/sites/yahoo-finance/chain-snapshot.mjs", "runYahooFinanceChainSnapshot"],
+  ["../src/sites/yahoo-finance/chain-snapshot.mjs", "runYahooFinanceAtm"],
+  ["../src/sites/yahoo-finance/compare.mjs", "runYahooFinanceCompare"],
+  ["../src/sites/tradingview/status.mjs", "runTradingViewStatus"],
+  ["../src/sites/tradingview/quote.mjs", "runTradingViewQuote"],
+  ["../src/sites/tradingview/historical-flow.mjs", "runTradingViewHistoricalFlow"],
+  ["../src/sites/tradingview/live-flow.mjs", "runTradingViewLiveFlow"],
+];
+
 test("buildRegistry creates a registry with all expected commands", () => {
   const reg = buildRegistry();
 
@@ -36,6 +51,30 @@ test("buildRegistry resolves representative site commands", () => {
   assert.ok(reg.resolve("weread", "search"), "weread search");
   assert.ok(reg.resolve("zhihu", "hot"), "zhihu hot");
   assert.ok(reg.resolve("yahoo-finance", "quote"), "yahoo-finance quote");
+  assert.ok(reg.resolve("tradingview", "status"), "tradingview status");
+});
+
+test("buildRegistry resolves newly added commands", () => {
+  const reg = buildRegistry();
+
+  assert.ok(reg.resolve("browser", "smoke"), "browser smoke");
+  assert.ok(reg.resolve("boss", "open-thread"), "boss open-thread");
+  assert.ok(reg.resolve("boss", "login-state"), "boss login-state");
+  assert.ok(reg.resolve("boss", "triage"), "boss triage");
+  assert.ok(reg.resolve("barchart", "put-call-ratio"), "barchart put-call-ratio");
+  assert.ok(reg.resolve("yahoo-finance", "chain-snapshot"), "yahoo-finance chain-snapshot");
+  assert.ok(reg.resolve("yahoo-finance", "atm"), "yahoo-finance atm");
+  assert.ok(reg.resolve("yahoo-finance", "compare"), "yahoo-finance compare");
+  assert.ok(reg.resolve("tradingview", "quote"), "tradingview quote");
+  assert.ok(reg.resolve("tradingview", "historical-flow"), "tradingview historical-flow");
+  assert.ok(reg.resolve("tradingview", "live-flow"), "tradingview live-flow");
+});
+
+test("new command modules export expected handlers", async () => {
+  for (const [modulePath, exportName] of NEW_COMMAND_HANDLERS) {
+    const module = await import(modulePath);
+    assert.equal(typeof module[exportName], "function", `${modulePath} missing ${exportName}`);
+  }
 });
 
 test("buildRegistry handlers are async functions", () => {

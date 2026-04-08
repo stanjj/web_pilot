@@ -5,6 +5,7 @@
   "type": "module",
   "description": "CDP-first browser automation toolkit for long-lived local browser sessions.",
   "scripts": {
+    "mcp:start": "node src/mcp-server.mjs",
     "browser:ensure": "node src/cli.mjs browser ensure",
     "sites:list": "node src/cli.mjs sites list",
     "sites:coverage": "node src/cli.mjs sites coverage",
@@ -84,5 +85,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
   }
 }

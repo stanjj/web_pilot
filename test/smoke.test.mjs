@@ -29,6 +29,11 @@ test("CLI loads", () => {
   const payload = JSON.parse(result.stdout);
   assert.equal(payload.ok, true);
   assert.ok(Array.isArray(payload.sites));
+  const tradingview = payload.sites.find((entry) => entry.site === "tradingview");
+  assert.ok(tradingview);
+  assert.equal(tradingview.loginRequired, null);
+  assert.equal(tradingview.loginMode, "mixed");
+  assert.ok(tradingview.publicCommands.includes("quote"));
 });
 
 test("json mode wraps successful command output", () => {
@@ -119,6 +124,17 @@ test("sites coverage exposes registry summary and manifest metadata", () => {
   assert.equal(typeof boss.notes, "string");
   assert.ok(Array.isArray(boss.commands));
   assert.ok(boss.commands.includes("inbox"));
+
+  const tradingview = payload.sites.find((entry) => entry.site === "tradingview");
+  assert.ok(tradingview);
+  assert.equal(tradingview.loginRequired, null);
+  assert.equal(tradingview.loginMode, "mixed");
+  assert.ok(tradingview.publicCommands.includes("status"));
+  assert.ok(tradingview.loginRequiredCommands.includes("historical-flow"));
+  assert.ok(tradingview.commands.includes("quote"));
+  assert.ok(tradingview.commands.includes("historical-flow"));
+  assert.match(tradingview.notes, /Mixed auth/i);
+  assert.match(tradingview.notes, /Pineify/i);
 });
 
 test("help output works", () => {
@@ -147,6 +163,18 @@ test("help output works", () => {
   assert.match(discordSearchHelp.stdout, /--server <name>/);
   assert.match(discordSearchHelp.stdout, /--user <name>/);
   assert.match(discordSearchHelp.stdout, /--channel <name>/);
+
+  const tradingviewHelp = runCli(["tradingview", "historical-flow", "--help"]);
+  assert.equal(tradingviewHelp.error, undefined);
+  assert.equal(tradingviewHelp.status, 0);
+  assert.match(tradingviewHelp.stdout, /Command: tradingview historical-flow/);
+  assert.match(tradingviewHelp.stdout, /via Pineify/);
+
+  const tradingviewQuoteHelp = runCli(["tradingview", "quote", "--help"]);
+  assert.equal(tradingviewQuoteHelp.error, undefined);
+  assert.equal(tradingviewQuoteHelp.status, 0);
+  assert.match(tradingviewQuoteHelp.stdout, /Command: tradingview quote/);
+  assert.match(tradingviewQuoteHelp.stdout, /Usage: node src\/cli\.mjs tradingview quote/);
 });
 
 test("unknown command fails usefully", () => {

@@ -27,6 +27,7 @@
   { "site": "reuters", "status": "partial", "loginRequired": false, "notes": "News search" },
   { "site": "shopback", "status": "partial", "loginRequired": false, "notes": "Cashback stores, deals, radar" },
   { "site": "smzdm", "status": "partial", "loginRequired": false, "notes": "Deal search" },
+  { "site": "tradingview", "status": "partial", "loginRequired": true, "notes": "Mixed auth: public symbol pages plus options flow via Pineify" },
   { "site": "twitter", "status": "partial", "loginRequired": true, "notes": "Timeline, search, bookmarks, post/reply" },
   { "site": "unusual-whales", "status": "partial", "loginRequired": true, "notes": "Options flow data" },
   { "site": "v2ex", "status": "partial", "loginRequired": false, "notes": "Forum hot/latest, topics" },

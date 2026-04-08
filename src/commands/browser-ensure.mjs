@@ -4,13 +4,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { AGENT_BROWSER_PORT, AGENT_BROWSER_PROFILE, AGENT_PROFILES_DIR } from "../core/agent-browser.mjs";
 import { classifyChromeDebuggerOwner } from "../core/browser-process.mjs";
-import { DEFAULT_PORT } from "../core/cdp.mjs";
+import { createTarget, DEFAULT_PORT, listTargets } from "../core/cdp.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
 const LAUNCH_SCRIPT = path.join(PROJECT_ROOT, "scripts", "launch_dedicated_chrome.ps1");
 const DEFAULT_CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const DEFAULT_CDP_PROBE_TIMEOUT_MS = 2000;
+const DEFAULT_BOOTSTRAP_URL = "about:blank";
 const POWERSHELL_EXE = process.env.SystemRoot
   ? path.join(process.env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
   : "powershell.exe";
@@ -139,11 +140,57 @@ function writeJson(writeOutput, payload) {
   writeOutput(`${JSON.stringify(payload, null, 2)}\n`);
 }
 
+export function isAttachablePageTarget(target) {
+  return Boolean(
+    target?.type === "page" &&
+    typeof target?.webSocketDebuggerUrl === "string" &&
+    target.webSocketDebuggerUrl &&
+    !String(target?.url || "").startsWith("devtools://"),
+  );
+}
+
+export async function ensureAttachablePageTarget({
+  port,
+  bootstrapUrl = DEFAULT_BOOTSTRAP_URL,
+  listTargetsFn = listTargets,
+  createTargetFn = createTarget,
+} = {}) {
+  const initialTargets = await listTargetsFn(port);
+  const attachableTargets = initialTargets.filter(isAttachablePageTarget);
+  if (attachableTargets.length > 0) {
+    const attachableTarget = attachableTargets[0];
+    return {
+      ok: true,
+      created: false,
+      attachablePageCount: attachableTargets.length,
+      targetId: attachableTarget?.id || null,
+      url: attachableTarget?.url || "",
+      target: attachableTarget,
+    };
+  }
+
+  const createdTarget = await createTargetFn(bootstrapUrl, port);
+  const refreshedTargets = await listTargetsFn(port);
+  const refreshedAttachableTargets = refreshedTargets.filter(isAttachablePageTarget);
+  const attachableTarget = refreshedAttachableTargets[0] || (isAttachablePageTarget(createdTarget) ? createdTarget : null);
+  const fallbackAttachableCount = attachableTarget ? 1 : 0;
+
+  return {
+    ok: refreshedAttachableTargets.length > 0 || fallbackAttachableCount > 0,
+    created: true,
+    attachablePageCount: refreshedAttachableTargets.length || fallbackAttachableCount,
+    targetId: attachableTarget?.id || null,
+    url: attachableTarget?.url || bootstrapUrl,
+    target: attachableTarget,
+  };
+}
+
 export async function runBrowserEnsure(flags, deps = {}) {
   const {
     probeCdpFn = probeCdp,
     verifyExistingBrowserIdentityFn = verifyExistingBrowserIdentity,
     launchDedicatedChromeFn = launchDedicatedChrome,
+    ensureAttachablePageTargetFn = ensureAttachablePageTarget,
     sleepFn = sleep,
     writeOutput = (text) => process.stdout.write(text),
   } = deps;
@@ -166,10 +213,18 @@ export async function runBrowserEnsure(flags, deps = {}) {
       throw new Error(`CDP port ${port} is reachable, but the owning Chrome process could not be verified`);
     }
 
+    const attachable = await ensureAttachablePageTargetFn({
+      port,
+      bootstrapUrl: urls[0] || DEFAULT_BOOTSTRAP_URL,
+    });
+
     writeJson(writeOutput, {
       ok: true,
       reused: true,
       verifiedProfile: ownership.verified !== false,
+      bootstrappedPage: attachable.created,
+      attachablePageCount: attachable.attachablePageCount,
+      attachableTargetId: attachable.targetId,
       processId: ownership.processId || null,
       port,
       profile: profileName,
@@ -203,10 +258,20 @@ export async function runBrowserEnsure(flags, deps = {}) {
     if (connected) break;
   }
 
+  const attachable = connected
+    ? await ensureAttachablePageTargetFn({
+      port,
+      bootstrapUrl: urls[0] || DEFAULT_BOOTSTRAP_URL,
+    })
+    : { created: false, attachablePageCount: 0, targetId: null };
+
   writeJson(writeOutput, {
     ok: Boolean(connected),
     reused: false,
     launched,
+    bootstrappedPage: attachable.created,
+    attachablePageCount: attachable.attachablePageCount,
+    attachableTargetId: attachable.targetId,
     port,
     profile: profileName,
     profileDir,

@@ -11,6 +11,7 @@ const USAGE = {
   // core
   "doctor:default":        "node src/cli.mjs doctor [--port 9223]",
   "browser:ensure":        "node src/cli.mjs browser ensure [--port 9223] [--profile agent] [--urls <comma-separated-urls>] [--show]",
+  "browser:smoke":         "node src/cli.mjs browser smoke [--port 9223] [--url about:blank]",
   "sites:list":            "node src/cli.mjs sites list",
   "sites:coverage":        "node src/cli.mjs sites coverage",
   "market:scan":           "node src/cli.mjs market scan [--symbols SPY,QQQ,IWM,AAPL,NVDA,TSLA] [--limit 10] [--all] [--port 9223]",
@@ -68,6 +69,7 @@ const USAGE = {
   "boss:reply":         "node src/cli.mjs boss reply (--index <n> | --name <text>) --message <text> [--dry-run] [--send] [--port 9223]",
   "boss:open-thread":   "node src/cli.mjs boss open-thread (--index <n> | --name <text>) [--port 9223]",
   "boss:login-state":   "node src/cli.mjs boss login-state [--area home|chat|search|all] [--port 9223]",
+  "boss:triage":        "node src/cli.mjs boss triage [--messages 10] [--port 9223]",
   // chatgpt
   "chatgpt:status": "node src/cli.mjs chatgpt status [--port 9223]",
   "chatgpt:read":   "node src/cli.mjs chatgpt read [--port 9223]",
@@ -216,6 +218,11 @@ const USAGE = {
   "shopback:alerts":           "node src/cli.mjs shopback alerts [--slug digital-services] [--section <name> | --sections <a,b>] [--min-percent 30] [--min-dollar 30] [--limit 10] [--port 9223]",
   // smzdm
   "smzdm:search": "node src/cli.mjs smzdm search --keyword <text> [--limit 20] [--port 9223]",
+  // tradingview
+  "tradingview:status": "node src/cli.mjs tradingview status [--port 9223]",
+  "tradingview:quote": "node src/cli.mjs tradingview quote --symbol AAPL [--exchange NASDAQ] [--port 9223]",
+  "tradingview:historical-flow": "node src/cli.mjs tradingview historical-flow [--symbol AAPL] [--limit 20] [--port 9223]",
+  "tradingview:live-flow": "node src/cli.mjs tradingview live-flow [--symbols SPY,QQQ,AAPL] [--min-volume-ratio 2] [--limit 20] [--port 9223]",
   // twitter
   "twitter:trending":      "node src/cli.mjs twitter trending [--limit 20] [--port 9223]",
   "twitter:profile":       "node src/cli.mjs twitter profile --username <handle> [--port 9223]",
@@ -351,6 +358,17 @@ export function buildRegistry() {
     handler: async (flags) => {
       const { runBrowserEnsure } = await import("./commands/browser-ensure.mjs");
       await runBrowserEnsure(flags);
+    },
+  });
+
+  reg.register({
+    site: "browser", action: "smoke", name: "browser smoke",
+    description: "Run a lightweight shared-browser smoke check",
+    usage: "node src/cli.mjs browser smoke [--port 9223] [--url about:blank]",
+    category: "core",
+    handler: async (flags) => {
+      const { runBrowserSmoke } = await import("./commands/browser-smoke.mjs");
+      await runBrowserSmoke(flags);
     },
   });
 
@@ -662,6 +680,25 @@ export function buildRegistry() {
 
   registerSimple(reg, "smzdm", "search", "./sites/smzdm/search.mjs", "runSmzdmSearch", { category: "shopping" });
 
+  // ── tradingview ────────────────────────────────────────────────
+
+  registerSimple(reg, "tradingview", "status", "./sites/tradingview/status.mjs", "runTradingViewStatus", {
+    category: "finance",
+    description: "TradingView public site status",
+  });
+  registerSimple(reg, "tradingview", "quote", "./sites/tradingview/quote.mjs", "runTradingViewQuote", {
+    category: "finance",
+    description: "TradingView symbol page quote and metadata",
+  });
+  registerSimple(reg, "tradingview", "historical-flow", "./sites/tradingview/historical-flow.mjs", "runTradingViewHistoricalFlow", {
+    category: "finance",
+    description: "TradingView historical options flow (via Pineify)",
+  });
+  registerSimple(reg, "tradingview", "live-flow", "./sites/tradingview/live-flow.mjs", "runTradingViewLiveFlow", {
+    category: "finance",
+    description: "TradingView live options flow scan (via Pineify)",
+  });
+
   // ── twitter ────────────────────────────────────────────────────
 
   registerSimple(reg, "twitter", "trending", "./sites/twitter/trending.mjs", "runTwitterTrending", { category: "social" });
@@ -915,6 +952,10 @@ export function buildRegistry() {
   registerSimple(reg, "boss", "reply", "./sites/boss/reply.mjs", "runBossReply", { category: "jobs", dryRunSupported: true });
   registerSimple(reg, "boss", "open-thread", "./sites/boss/open-thread.mjs", "runBossOpenThread", { category: "jobs" });
   registerSimple(reg, "boss", "login-state", "./sites/boss/login-state.mjs", "runBossLoginState", { category: "jobs" });
+  registerSimple(reg, "boss", "triage", "./sites/boss/triage.mjs", "runBossTriage", {
+    category: "jobs",
+    description: "One-command triage: load inbox, open top needs-reply thread, return full context + nextStep hint",
+  });
 
   return reg;
 }

@@ -73,6 +73,55 @@ function normalizeSuccessPayload(data) {
   return normalized;
 }
 
+/**
+ * Execute a command and return the structured result as a JS object.
+ * Unlike executeJsonMode, this does NOT write to stdout — it returns
+ * { ok, data, meta } directly. Used by the MCP server.
+ *
+ * @param {import('./command-registry.mjs').CommandDef} cmd
+ * @param {Record<string, unknown>} flags
+ * @param {string[]} extraArgs
+ * @returns {Promise<{ ok: boolean, data?: unknown, meta: Record<string, unknown>, error?: string, code?: string }>}
+ */
+export async function executeForResult(cmd, flags, extraArgs) {
+  const startMs = Date.now();
+  const captured = [];
+
+  // Intercept stdout writes so handler output is captured
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  const previousExitCode = process.exitCode;
+  process.exitCode = undefined;
+  process.stdout.write = (chunk, ...rest) => {
+    captured.push(typeof chunk === "string" ? chunk : chunk.toString());
+    return true;
+  };
+
+  try {
+    const result = await cmd.handler(flags, extraArgs);
+    const elapsedMs = Date.now() - startMs;
+
+    process.stdout.write = originalWrite;
+    process.exitCode = previousExitCode;
+
+    const data = extractJsonData(result, captured);
+    const meta = { elapsedMs, command: cmd.name };
+
+    if (isFailurePayload(data)) {
+      return { ...data, meta };
+    }
+
+    return toSuccess(normalizeSuccessPayload(data), meta);
+  } catch (error) {
+    const elapsedMs = Date.now() - startMs;
+
+    process.stdout.write = originalWrite;
+    process.exitCode = previousExitCode;
+
+    const payload = toFailure(error);
+    return { ...payload, meta: { elapsedMs, command: cmd.name } };
+  }
+}
+
 export async function executeJsonMode(cmd, flags, extraArgs, runtime = {}) {
   const stdout = runtime.stdout ?? process.stdout;
   const processState = runtime.processState ?? process;
