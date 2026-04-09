@@ -1,5 +1,6 @@
 import { evaluate, navigate } from "../../core/cdp.mjs";
 import { connectWechatPage, getWechatPort, getWechatUrl } from "./common.mjs";
+import { summarizeWechatPage } from "./helpers.mjs";
 
 export async function runWechatStatus(flags) {
   const port = getWechatPort(flags.port);
@@ -7,20 +8,21 @@ export async function runWechatStatus(flags) {
 
   try {
     await navigate(client, getWechatUrl(), 3500);
-    const result = await evaluate(client, `
+    const snapshot = await evaluate(client, `
       (() => {
         const text = document.body.innerText || '';
         return {
-          ok: true,
-          status: 'Connected',
           url: location.href,
           title: document.title,
-          loggedInHint: !/scan|扫码|登录|login/i.test(text),
-          needsQr: /scan|扫码/i.test(text)
+          bodyText: text.slice(0, 1600),
+          hasChatShell: Boolean(document.querySelector('.main_inner, .chat_list, [role="navigation"]')),
+          chatCount: document.querySelectorAll('[role="listitem"], .chat_item, .conversation-item').length
         };
       })()
     `);
+    const result = summarizeWechatPage(snapshot);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return result;
   } finally {
     await client.close();
   }

@@ -1,6 +1,7 @@
-import { connectToTarget, createTarget, DEFAULT_PORT, findPageTarget } from "../../core/cdp.mjs";
+import { connectToTarget, createTarget, DEFAULT_PORT, listTargets } from "../../core/cdp.mjs";
 import { AGENT_BROWSER_PORT } from "../../core/agent-browser.mjs";
 import { autoMinimizeChromeForPort } from "../../core/windows.mjs";
+import { pickPreferredFeishuTarget } from "./helpers.mjs";
 
 export function getFeishuPort(input) {
   const parsed = Number(input ?? AGENT_BROWSER_PORT ?? DEFAULT_PORT);
@@ -12,10 +13,7 @@ export function getFeishuUrl() {
 }
 
 export async function getFeishuTarget(port = DEFAULT_PORT) {
-  const existing = await findPageTarget(
-    (target) => /feishu\.cn|larksuite\.com/i.test(target.url) || /feishu|lark/i.test(target.title || ""),
-    port,
-  );
+  const existing = pickPreferredFeishuTarget(await listTargets(port));
   if (existing) return existing;
   return createTarget(getFeishuUrl(), port);
 }

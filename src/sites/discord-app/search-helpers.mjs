@@ -136,6 +136,31 @@ export function resolveDiscordServerSelection(entries = [], requestedServer) {
   };
 }
 
+export function pickDefaultDiscordServer(entries = []) {
+  const items = normalizeDiscordServerEntries(entries);
+  if (!items.length) {
+    return {
+      ok: false,
+      error: "No visible Discord servers are available to auto-select.",
+    };
+  }
+
+  const selected = items.find((item) => item.ariaSelected === "true" || /selected/i.test(String(item.className || "")));
+  if (selected) {
+    return {
+      ok: true,
+      item: selected,
+      reason: "selected",
+    };
+  }
+
+  return {
+    ok: true,
+    item: items[0],
+    reason: "first-visible",
+  };
+}
+
 export function buildDiscordSearchQuery({ query = "", filters = {} } = {}) {
   const textQuery = readTextValue(query, true);
   const tokens = [];

@@ -1,5 +1,6 @@
-import { evaluate, navigate, insertText } from "../../core/cdp.mjs";
-import { connectFeishuPage, getFeishuPort, getFeishuUrl } from "./common.mjs";
+import { evaluate, insertText } from "../../core/cdp.mjs";
+import { connectFeishuPage, getFeishuPort } from "./common.mjs";
+import { ensureFeishuReady } from "./helpers.mjs";
 
 export async function runFeishuSearch(flags) {
   const query = String(flags.query || "").trim();
@@ -7,7 +8,16 @@ export async function runFeishuSearch(flags) {
   if (!query) throw new Error("Missing required --query");
   const { client } = await connectFeishuPage(port);
   try {
-    await navigate(client, getFeishuUrl(), 2500);
+    const snapshot = await evaluate(client, `
+      (() => ({
+        url: location.href,
+        title: document.title,
+        bodyText: (document.body?.innerText || '').slice(0, 1600),
+        hasAppShell: Boolean(document.querySelector('[data-testid], [role="navigation"], [class*="messenger"], [class*="suite"]')),
+        hasSearchInput: Boolean(document.querySelector('input[type="text"], input[placeholder*="搜索"], input[placeholder*="Search"]'))
+      }))()
+    `);
+    ensureFeishuReady(snapshot);
     const prep = await evaluate(client, `
       (() => {
         const input = document.querySelector('input[type="text"], input[placeholder*="搜索"], input[placeholder*="Search"]');

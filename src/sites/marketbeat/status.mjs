@@ -1,5 +1,6 @@
 import { evaluate, navigate } from "../../core/cdp.mjs";
 import { connectMarketBeatPage, getMarketBeatPort, getMarketBeatUrl } from "./common.mjs";
+import { summarizeMarketBeatPage } from "./helpers.mjs";
 
 export async function runMarketBeatStatus(flags) {
   const port = getMarketBeatPort(flags.port);
@@ -7,15 +8,16 @@ export async function runMarketBeatStatus(flags) {
 
   try {
     await navigate(client, getMarketBeatUrl(), 2500);
-    const result = await evaluate(client, `
+    const snapshot = await evaluate(client, `
       (() => ({
-        ok: true,
-        status: 'Connected',
         url: location.href,
-        title: document.title
+        title: document.title,
+        bodyText: (document.body?.innerText || '').slice(0, 1600)
       }))()
     `);
+    const result = summarizeMarketBeatPage(snapshot);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return result;
   } finally {
     await client.close();
   }

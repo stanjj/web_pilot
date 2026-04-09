@@ -23,14 +23,17 @@ export async function runTwitterTrending(flags) {
         const bearerToken = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
 
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
           const resp = await fetch('/i/api/2/guide.json?include_page_configuration=true', {
             credentials: 'include',
+            signal: controller.signal,
             headers: {
               'x-twitter-active-user': 'yes',
               'x-csrf-token': csrfToken,
               authorization: 'Bearer ' + bearerToken
             }
-          });
+          }).finally(() => clearTimeout(timeoutId));
           const text = await resp.text();
           if (!resp.ok) {
             return {
@@ -68,7 +71,12 @@ export async function runTwitterTrending(flags) {
 
           return { ok: true, count: trends.length, items: trends };
         } catch (error) {
-          return { ok: false, status: null, body: String(error) };
+          return {
+            ok: false,
+            status: null,
+            timedOut: error?.name === 'AbortError',
+            body: String(error),
+          };
         }
       })()
     `);
@@ -78,8 +86,11 @@ export async function runTwitterTrending(flags) {
         ok: false,
         status: result?.status ?? null,
         needsLogin: Boolean(result?.needsLogin),
+        timedOut: Boolean(result?.timedOut),
         message: result?.needsLogin
           ? "Twitter trending requires a logged-in session in the shared agent browser."
+          : result?.timedOut
+            ? "Twitter trending request timed out before Twitter returned data."
           : "Twitter trending request failed.",
         body: result?.body || "",
       }, null, 2)}\n`);

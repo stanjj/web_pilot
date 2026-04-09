@@ -1,6 +1,7 @@
-import { connectToTarget, createTarget, DEFAULT_PORT, findPageTarget } from "../../core/cdp.mjs";
+import { connectToTarget, createTarget, DEFAULT_PORT, listTargets } from "../../core/cdp.mjs";
 import { AGENT_BROWSER_PORT } from "../../core/agent-browser.mjs";
 import { autoMinimizeChromeForPort } from "../../core/windows.mjs";
+import { pickPreferredNotionTarget } from "./helpers.mjs";
 
 export function getNotionPort(input) {
   const parsed = Number(input ?? AGENT_BROWSER_PORT ?? DEFAULT_PORT);
@@ -12,10 +13,7 @@ export function getNotionUrl() {
 }
 
 export async function getNotionTarget(port = DEFAULT_PORT) {
-  const existing = await findPageTarget(
-    (target) => /notion\.so/i.test(target.url),
-    port,
-  );
+  const existing = pickPreferredNotionTarget(await listTargets(port));
   if (existing) return existing;
   return createTarget(getNotionUrl(), port);
 }

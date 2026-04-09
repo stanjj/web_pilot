@@ -1,8 +1,9 @@
-import { connectToTarget, createTarget, evaluate, findPageTarget, navigate } from "../../core/cdp.mjs";
-import { getBarchartPort } from "./common.mjs";
+import { evaluate, navigate } from "../../core/cdp.mjs";
+import { connectBarchartFlowPage, getBarchartFlowUrl, getBarchartPort } from "./common.mjs";
+import { BARCHART_FLOW_FIELDS } from "./flow-helpers.mjs";
 import { parseBarchartFlowSymbolResponse } from "./flow.mjs";
 
-export async function runBarchartFlowSymbol(flags) {
+export async function fetchBarchartFlowSymbol(flags) {
   const symbol = String(flags.symbol || "").trim().toUpperCase();
   const type = String(flags.type || "all").trim().toLowerCase();
   const limit = Number(flags.limit ?? 20);
@@ -13,17 +14,14 @@ export async function runBarchartFlowSymbol(flags) {
     throw new Error("Invalid --type. Use all, call, or put");
   }
 
-  const target = await findPageTarget(
-    (entry) => /barchart\.com/i.test(entry.url) && /\/options\/unusual-activity\//i.test(entry.url),
-    port,
-  ) || await createTarget("https://www.barchart.com/options/unusual-activity/stocks", port);
-  const client = await connectToTarget(target);
+  const { client } = await connectBarchartFlowPage(port);
 
   try {
-    await navigate(client, "https://www.barchart.com/options/unusual-activity/stocks", 4000);
+    await navigate(client, getBarchartFlowUrl(), 4000);
 
     const result = await evaluate(client, `
       (async () => {
+        const limit = ${Number.isFinite(limit) ? Math.max(1, limit) : 20};
         let csrf = '';
         for (let i = 0; i < 10; i += 1) {
           csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -36,44 +34,60 @@ export async function runBarchartFlowSymbol(flags) {
         }
 
         const headers = { 'X-CSRF-TOKEN': csrf };
-        const fields = [
-          'baseSymbol','strikePrice','expirationDate','optionType',
-          'lastPrice','volume','openInterest','volumeOpenInterestRatio','volatility'
-        ].join(',');
+        const fields = ${JSON.stringify(BARCHART_FLOW_FIELDS)}.join(',');
+        const fetchLimit = Math.max(500, limit * 10);
+        const lists = [
+          'options.unusual_activity.stocks.us',
+          'options.mostActive.us'
+        ];
+        const responses = [];
 
-        const url = '/proxies/core-api/v1/options/get?list='
-          + encodeURIComponent('options.unusual_activity.stocks.us')
-          + '&fields=' + encodeURIComponent(fields)
-          + '&orderBy=volumeOpenInterestRatio&orderDir=desc'
-          + '&raw=1&limit=500';
+        for (const list of lists) {
+          try {
+            const url = '/proxies/core-api/v1/options/get?list='
+              + encodeURIComponent(list)
+              + '&fields=' + encodeURIComponent(fields)
+              + '&orderBy=volumeOpenInterestRatio&orderDir=desc'
+              + '&raw=1&limit=' + fetchLimit;
 
-        try {
-          const resp = await fetch(url, { credentials: 'include', headers });
-          const text = await resp.text();
-          return {
-            ok: true,
-            response: {
+            const resp = await fetch(url, { credentials: 'include', headers });
+            const text = await resp.text();
+            responses.push({
+              list,
               ok: resp.ok,
               status: resp.status,
               text
+            });
+            if (resp.status === 401 || resp.status === 403) {
+              break;
             }
-          };
-        } catch (error) {
-          return { ok: false, code: 'request-failed', message: String(error) };
+          } catch (error) {
+            responses.push({
+              list,
+              ok: false,
+              status: null,
+              text: '',
+              message: String(error)
+            });
+          }
         }
+
+        return { ok: true, responses };
       })()
     `);
 
     const normalized = parseBarchartFlowSymbolResponse(result, { symbol, type, limit });
-
-    if (!normalized.ok) {
-      process.stdout.write(`${JSON.stringify(normalized, null, 2)}\n`);
-      process.exitCode = normalized.needsLogin ? 2 : 1;
-      return;
-    }
-
-    process.stdout.write(`${JSON.stringify(normalized, null, 2)}\n`);
+    return normalized;
   } finally {
     await client.close();
   }
+}
+
+export async function runBarchartFlowSymbol(flags) {
+  const result = await fetchBarchartFlowSymbol(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  if (!result?.ok) {
+    process.exitCode = result.needsLogin ? 2 : 1;
+  }
+  return result;
 }

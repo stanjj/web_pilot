@@ -24,7 +24,7 @@ function formatExpiry(year, month, day) {
   return `${year}-${mm}-${dd}`;
 }
 
-export async function runInsiderFinanceFlow(flags) {
+export async function fetchInsiderFinanceFlow(flags) {
   const limit = Math.min(Number(flags.limit ?? 15), 50);
   const minSize = Number(flags["min-size"] ?? 1000000);
   const port = getInsiderFinancePort(flags.port);
@@ -118,15 +118,21 @@ export async function runInsiderFinanceFlow(flags) {
         rank: index + 1,
       }));
 
-    process.stdout.write(`${JSON.stringify({
+    return {
       ok: !!result.ok,
       minSize,
       pageTitle: result.pageTitle,
       pageUrl: result.pageUrl,
       count: items.length,
       items,
-    }, null, 2)}\n`);
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runInsiderFinanceFlow(flags) {
+  const result = await fetchInsiderFinanceFlow(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }

@@ -71,7 +71,7 @@ async function extractTopDarkPool(client, limit) {
   `);
 }
 
-export async function runWhaleStreamSummary(flags) {
+export async function fetchWhaleStreamSummary(flags) {
   const limit = Math.min(Number(flags.limit ?? 10), 20);
   const port = getWhaleStreamPort(flags.port);
   const { client } = await connectWhaleStreamPage(port);
@@ -80,7 +80,7 @@ export async function runWhaleStreamSummary(flags) {
     const topOptionsFlow = await extractTopOptions(client, limit);
     const topDarkPoolTickers = await extractTopDarkPool(client, limit);
 
-    process.stdout.write(`${JSON.stringify({
+    return {
       ok: true,
       dailySummary: {
         optionsHeading: topOptionsFlow.heading,
@@ -89,8 +89,14 @@ export async function runWhaleStreamSummary(flags) {
       },
       topOptionsFlow: topOptionsFlow.items || [],
       topDarkPoolTickers: topDarkPoolTickers.items || [],
-    }, null, 2)}\n`);
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runWhaleStreamSummary(flags) {
+  const result = await fetchWhaleStreamSummary(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }

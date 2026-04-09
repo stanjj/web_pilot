@@ -18,6 +18,47 @@ This file tracks the next work for `web-pilot`.
 - Some sites only have `status`/login detection or are blocked by auth walls, rate limits, or anti-bot checks.
 - MCP server added (`src/mcp-server.mjs`): 271 tools registered, stdio transport, works with Claude Desktop / Cursor / Continue / Cline.
 
+## Live Verification Snapshot
+
+Last checked: `2026-04-08`
+
+- TradingView is live-verified end-to-end:
+  - `status` and `quote` run directly against public TradingView pages
+  - `historical-flow` and `live-flow` return real data, but they are Pineify-backed aliases rather than native TradingView flow parsers
+- Public finance commands live-verified:
+  - `barchart flow`
+  - `barchart quote`
+  - `barchart flow-symbol`
+  - `marketbeat unusual-put`
+  - `xueqiu stock`
+  - `xueqiu search`
+  - `yahoo-finance quote`
+  - `yahoo-finance options`
+- `barchart flow-symbol` now falls back from `options.unusual_activity.stocks.us` to `options.mostActive.us`, so symbols like `FND` and `AEM` are no longer missed when they only appear in the broader activity list.
+- Finance `status` commands now verify real feature access instead of only root-page reachability:
+  - `pineify status` checks site-token access for historical flow
+  - `insiderfinance status` checks free flow GraphQL access
+  - `unusual-whales status` checks the live free-flow network response
+  - `whalestream status` checks top-options, dark-pool, and news access
+- BOSS inbox workflow live-verified:
+  - `boss inbox`
+  - `boss triage`
+- Additional logged-in commands live-verified:
+  - `linkedin search`
+  - `chatgpt status`
+  - `chatgpt read`
+- `discord-app search` now auto-selects the first visible server when no searchable channel is open, so `--query` no longer requires a manual pre-click into a server/channel first.
+- `notion` now prefers an already-open workspace/app tab over the marketing root when multiple Notion tabs exist.
+- `notion status` now reports both the marketing root and onboarding pages as `Login or workspace required` instead of false `Connected`, and `notion search`/`sidebar` now fail closed until a real workspace page is open in the shared browser.
+- `feishu` now prefers an already-open app/workspace tab over marketing pages and fails closed on the Lark/Feishu marketing root instead of reporting a false `Connected`.
+- `wechat status` now reports `QR login required` when the shared browser is on the QR gate, and `wechat chats` now fails closed until the QR login completes.
+- Known blocker after live check:
+  - `marketbeat unusual-call` currently redirects away from `/market-data/unusual-call-options-volume/` in the shared browser, so it now fails closed instead of returning a misleading empty result.
+  - `twitter trending` still returned `403` with `needsLogin: true` against the current shared browser session, so Twitter remains session-blocked on this machine until login is refreshed.
+  - `notion status` currently lands on `https://www.notion.so/onboarding`, so the session is partially authenticated but not inside a usable workspace yet.
+  - `feishu status` currently lands on `https://www.larksuite.com/en_us/getstarted`, so the session is not inside a usable Feishu/Lark app workspace yet.
+  - `wechat status` currently remains on the QR gate in this shared browser session, so WeChat read commands stay blocked until QR login is completed.
+
 ## Priority 0: Keep The Core Stable
 
 - [ ] Verify `browser ensure` behavior from a cold start after a full Chrome shutdown.
@@ -75,7 +116,7 @@ Goal: make BOSS fully practical from this repo.
   - moneyness
 - [ ] Add symbol-specific flow analysis workflow instead of only global unusual-flow scans.
 - [x] Add a `barchart flow-symbol` command.
-- [ ] Add better interpretation fields for flow:
+- [x] Add better interpretation fields for flow:
   - premium rank
   - volume/open-interest ratio
   - near-ATM flag

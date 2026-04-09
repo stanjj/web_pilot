@@ -13,7 +13,7 @@ function extractNumber(text) {
   return cleaned ? Number(cleaned[0]) : null;
 }
 
-export async function runBarchartTechnicals(flags) {
+export async function fetchBarchartTechnicals(flags) {
   const symbol = String(flags.symbol || "").trim().toUpperCase();
   if (!symbol) {
     throw new Error("Missing required --symbol");
@@ -112,7 +112,7 @@ export async function runBarchartTechnicals(flags) {
       })()
     `);
 
-    process.stdout.write(`${JSON.stringify({
+    return {
       ok: true,
       symbol,
       ivRank: extractNumber(overviewData.ivRank),
@@ -129,8 +129,14 @@ export async function runBarchartTechnicals(flags) {
       notes: (overviewData.opinionLine || technicalData.opinionLine)
         ? null
         : "Barchart public pages do not expose a compact buy/sell opinion label for this symbol in the current layout.",
-    }, null, 2)}\n`);
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runBarchartTechnicals(flags) {
+  const result = await fetchBarchartTechnicals(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }

@@ -42,7 +42,7 @@ node src/cli.mjs barchart quote --symbol QQQ --port 9223
 node src/cli.mjs xueqiu hot --limit 20 --port 9223
 
 # 4. Machine-readable output for agents/scripts
-node src/cli.mjs --json barchart flow --type unusual --limit 10 --port 9223
+node src/cli.mjs --json barchart flow --type all --limit 10 --port 9223
 
 # 5. Start the MCP server for Claude Desktop / Cursor / Continue
 npm run mcp:start
@@ -272,7 +272,7 @@ Expected default profile shape:
 
 ```powershell
 node src/cli.mjs barchart quote --symbol QQQ --port 9223
-node src/cli.mjs barchart flow --type unusual --limit 20 --port 9223
+node src/cli.mjs barchart flow --type all --limit 20 --port 9223
 node src/cli.mjs barchart options --symbol NVDA --type Call --expiry 2026-05-16 --limit 20 --port 9223
 node src/cli.mjs barchart greeks --symbol SPY --port 9223
 ```
@@ -302,7 +302,7 @@ node src/cli.mjs twitter bookmarks --limit 50 --port 9223
 
 ```powershell
 # Unusual options flow across 4 sources
-node src/cli.mjs barchart flow --type unusual --limit 10 --port 9223
+node src/cli.mjs barchart flow --type all --limit 10 --port 9223
 node src/cli.mjs unusual-whales flow --limit 10 --port 9223
 node src/cli.mjs whalestream summary --port 9223
 

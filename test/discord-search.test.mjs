@@ -9,6 +9,7 @@ import {
   normalizeDiscordSearchLimit,
   normalizeDiscordSearchRequest,
   normalizeDiscordServerTitle,
+  pickDefaultDiscordServer,
   resolveDiscordServerSelection,
   quoteDiscordSearchValue,
 } from "../src/sites/discord-app/search-helpers.mjs";
@@ -146,6 +147,39 @@ test("resolveDiscordServerSelection reports ambiguity and misses clearly", () =>
   const missing = resolveDiscordServerSelection([{ title: "Beta", guildId: "3" }], "Gamma");
   assert.equal(missing.ok, false);
   assert.match(missing.error, /not found/i);
+});
+
+test("pickDefaultDiscordServer prefers the selected server and falls back to the first visible one", () => {
+  assert.deepEqual(
+    pickDefaultDiscordServer([
+      { title: "Alpha", guildId: "1", ariaSelected: "false" },
+      { title: "Beta", guildId: "2", ariaSelected: "true" },
+    ]),
+    {
+      ok: true,
+      item: {
+        title: "Beta",
+        guildId: "2",
+        ariaSelected: "true",
+      },
+      reason: "selected",
+    },
+  );
+
+  assert.deepEqual(
+    pickDefaultDiscordServer([
+      { title: "Alpha", guildId: "1" },
+      { title: "Beta", guildId: "2" },
+    ]),
+    {
+      ok: true,
+      item: {
+        title: "Alpha",
+        guildId: "1",
+      },
+      reason: "first-visible",
+    },
+  );
 });
 
 test("isDiscordSearchElement accepts the search combobox and rejects the message composer", () => {

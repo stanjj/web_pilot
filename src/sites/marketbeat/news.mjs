@@ -4,6 +4,7 @@ import {
   getMarketBeatHeadlinesUrl,
   getMarketBeatPort,
 } from "./common.mjs";
+import { ensureMarketBeatReady } from "./helpers.mjs";
 
 export async function runMarketBeatNews(flags) {
   const limit = Math.min(Number(flags.limit ?? 20), 50);
@@ -12,6 +13,14 @@ export async function runMarketBeatNews(flags) {
 
   try {
     await navigate(client, getMarketBeatHeadlinesUrl(), 3500);
+    const snapshot = await evaluate(client, `
+      (() => ({
+        url: location.href,
+        title: document.title,
+        bodyText: (document.body?.innerText || '').slice(0, 1600)
+      }))()
+    `);
+    ensureMarketBeatReady(snapshot);
 
     const result = await evaluate(client, `
       (() => {

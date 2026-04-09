@@ -34,7 +34,7 @@ function formatMoney(value) {
   return `$${value.toFixed(2)}`;
 }
 
-export async function runUnusualWhalesFlow(flags) {
+export async function fetchUnusualWhalesFlow(flags) {
   const limit = Math.min(Number(flags.limit ?? 20), 50);
   const minPremium = Number(flags["min-premium"] ?? 500000);
   const port = getUnusualWhalesPort(flags.port);
@@ -90,7 +90,7 @@ export async function runUnusualWhalesFlow(flags) {
       .sort((a, b) => (b.premiumValue || 0) - (a.premiumValue || 0))
       .slice(0, limit);
 
-    process.stdout.write(`${JSON.stringify({
+    return {
       ok: true,
       minPremium,
       sourceUrl: responseEvent?.response?.url || null,
@@ -115,8 +115,14 @@ export async function runUnusualWhalesFlow(flags) {
         executedAt: item.executedAt,
         tags: item.tags,
       })),
-    }, null, 2)}\n`);
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runUnusualWhalesFlow(flags) {
+  const result = await fetchUnusualWhalesFlow(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }

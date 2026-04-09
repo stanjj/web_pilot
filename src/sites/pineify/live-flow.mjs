@@ -31,7 +31,7 @@ function computeSentimentScore(contractType, volumeRatio, premiumValue) {
   return contractType === "call" ? magnitude : contractType === "put" ? -magnitude : 0;
 }
 
-export async function runPineifyLiveFlow(flags) {
+export async function fetchPineifyLiveFlow(flags) {
   const symbols = parseSymbols(flags);
   const limit = Math.min(Number(flags.limit ?? 20), 100);
   const minVolumeRatio = Number(flags["min-volume-ratio"] ?? 2);
@@ -95,13 +95,11 @@ export async function runPineifyLiveFlow(flags) {
     `);
 
     if (!result?.ok) {
-      process.stdout.write(`${JSON.stringify({
+      return {
         ok: false,
         symbols,
         message: result?.message || "Pineify live flow failed.",
-      }, null, 2)}\n`);
-      process.exitCode = 1;
-      return;
+      };
     }
 
     const errors = [];
@@ -154,15 +152,22 @@ export async function runPineifyLiveFlow(flags) {
         ...item,
       }));
 
-    process.stdout.write(`${JSON.stringify({
+    return {
       ok: true,
       symbols,
       minVolumeRatio,
       count: ranked.length,
       errors,
       items: ranked,
-    }, null, 2)}\n`);
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runPineifyLiveFlow(flags) {
+  const result = await fetchPineifyLiveFlow(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  if (!result?.ok) process.exitCode = 1;
+  return result;
 }

@@ -15,6 +15,10 @@ export {
   getTechnicalAnalysisUrl,
 };
 
+export function getBarchartFlowUrl() {
+  return "https://www.barchart.com/options/unusual-activity/stocks";
+}
+
 export async function getBarchartTarget(symbol, port = DEFAULT_PORT) {
   const existing = await findPageTarget(
     (target) => /barchart\.com/i.test(target.url) && target.url.includes(`/${symbol}/`),
@@ -30,4 +34,31 @@ export async function connectBarchartPage(symbol, port = DEFAULT_PORT) {
   const client = await connectToTarget(target);
   await autoMinimizeChromeForPort(actualPort);
   return { client, target, port: actualPort };
+}
+
+export async function connectBarchartFlowPage(port = DEFAULT_PORT) {
+  const actualPort = getBarchartPort(port);
+  const existing = await findPageTarget(
+    (target) => /barchart\.com/i.test(target.url) && /\/options\/unusual-activity\//i.test(target.url),
+    actualPort,
+  );
+  const candidates = [];
+  if (existing) candidates.push(existing);
+  if (!existing) candidates.push(await createTarget(getBarchartFlowUrl(), actualPort));
+
+  let lastError = null;
+  for (const target of candidates) {
+    try {
+      const client = await connectToTarget(target);
+      await autoMinimizeChromeForPort(actualPort);
+      return { client, target, port: actualPort };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const freshTarget = await createTarget(getBarchartFlowUrl(), actualPort);
+  const client = await connectToTarget(freshTarget);
+  await autoMinimizeChromeForPort(actualPort);
+  return { client, target: freshTarget, port: actualPort, recoveredFrom: lastError?.message || null };
 }

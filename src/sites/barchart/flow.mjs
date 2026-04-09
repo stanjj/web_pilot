@@ -1,6 +1,7 @@
-import { connectToTarget, createTarget, evaluate, findPageTarget, navigate } from "../../core/cdp.mjs";
-import { getBarchartPort } from "./common.mjs";
+import { evaluate, navigate } from "../../core/cdp.mjs";
+import { connectBarchartFlowPage, getBarchartPort, getBarchartFlowUrl } from "./common.mjs";
 import {
+  BARCHART_FLOW_FIELDS,
   normalizeBarchartFlowType,
   parseBarchartFlowResponses,
   parseBarchartFlowSymbolResponse,
@@ -17,14 +18,10 @@ export async function runBarchartFlow(flags) {
     throw new Error("Invalid --type. Use all, call, or put");
   }
 
-  const target = await findPageTarget(
-    (entry) => /barchart\.com/i.test(entry.url) && /\/options\/unusual-activity\//i.test(entry.url),
-    port,
-  ) || await createTarget("https://www.barchart.com/options/unusual-activity/stocks", port);
-  const client = await connectToTarget(target);
+  const { client } = await connectBarchartFlowPage(port);
 
   try {
-    await navigate(client, "https://www.barchart.com/options/unusual-activity/stocks", 4000);
+    await navigate(client, getBarchartFlowUrl(), 4000);
 
     const result = await evaluate(client, `
       (async () => {
@@ -43,10 +40,7 @@ export async function runBarchartFlow(flags) {
         }
 
         const headers = { 'X-CSRF-TOKEN': csrf };
-        const fields = [
-          'baseSymbol','strikePrice','expirationDate','optionType',
-          'lastPrice','volume','openInterest','volumeOpenInterestRatio','volatility'
-        ].join(',');
+        const fields = ${JSON.stringify(BARCHART_FLOW_FIELDS)}.join(',');
         const fetchLimit = typeFilter !== 'all' ? limit * 3 : limit;
         const lists = [
           'options.unusual_activity.stocks.us',

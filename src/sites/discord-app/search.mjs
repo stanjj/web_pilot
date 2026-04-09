@@ -8,6 +8,7 @@ import {
   normalizeDiscordSearchLimit,
   normalizeDiscordSearchRequest,
   normalizeDiscordServerTitle,
+  pickDefaultDiscordServer,
   quoteDiscordSearchValue,
   readTextValue,
   resolveDiscordServerSelection,
@@ -39,6 +40,7 @@ export {
   normalizeDiscordSearchLimit,
   normalizeDiscordSearchRequest,
   normalizeDiscordServerTitle,
+  pickDefaultDiscordServer,
   quoteDiscordSearchValue,
   resolveDiscordServerSelection,
 } from "./search-helpers.mjs";
@@ -183,6 +185,40 @@ async function selectDiscordServer(client, requestedServer) {
     title: selection.item.title,
     guildId: selection.item.guildId,
     matchType: selection.matchType,
+    changed: true,
+    url: settled.url || "",
+  };
+}
+
+async function selectDefaultDiscordServer(client) {
+  const context = await loadDiscordServerContext(client);
+  const selection = pickDefaultDiscordServer(context?.servers || []);
+  if (!selection.ok) {
+    throw new Error(`${selection.error} Open a Discord server with --server or switch to a searchable channel manually.`);
+  }
+
+  if (selection.reason === "selected") {
+    return {
+      ok: true,
+      title: selection.item.title,
+      guildId: selection.item.guildId,
+      matchType: "auto-selected-current",
+      changed: false,
+      url: context?.url || "",
+    };
+  }
+
+  await activateDiscordServerNode(client, selection.item);
+  const settled = await waitForDiscordServerContext(client, selection.item.guildId);
+  if (!settled) {
+    throw new Error(`Discord auto-selection timed out for ${selection.item.title}.`);
+  }
+
+  return {
+    ok: true,
+    title: selection.item.title,
+    guildId: selection.item.guildId,
+    matchType: "auto-selected-first-visible",
     changed: true,
     url: settled.url || "",
   };
@@ -351,8 +387,24 @@ export async function runDiscordSearch(flags) {
   const port = getDiscordPort(flags.port);
   const { client } = await connectDiscordPage(port);
   try {
-    const serverContext = request.server ? await selectDiscordServer(client, request.server) : null;
-    await prepareDiscordSearchBox(client);
+    let serverContext = request.server ? await selectDiscordServer(client, request.server) : null;
+    try {
+      await prepareDiscordSearchBox(client);
+    } catch (error) {
+      if (request.server) {
+        throw error;
+      }
+
+      const message = String(error?.message || "");
+      if (!/Discord search box not found/i.test(message)) {
+        throw error;
+      }
+
+      const autoServerContext = await selectDefaultDiscordServer(client);
+      await prepareDiscordSearchBox(client);
+      request.server = autoServerContext.title;
+      serverContext = autoServerContext;
+    }
     const typed = await typeIntoDiscordSearchBox(client, request.resolvedQuery);
     const expectedSearchText = readTextValue(request.resolvedQuery, true);
     const actualSearchText = readTextValue(typed?.inputText, true);

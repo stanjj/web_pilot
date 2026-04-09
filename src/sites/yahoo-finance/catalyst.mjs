@@ -12,7 +12,7 @@ function extractNumber(text) {
   return matched ? Number(matched[0]) : null;
 }
 
-export async function runYahooFinanceCatalyst(flags) {
+export async function fetchYahooFinanceCatalyst(flags) {
   const symbol = String(flags.symbol || "").trim().toUpperCase();
   const limit = Math.min(Number(flags.limit ?? 5), 10);
   if (!symbol) {
@@ -72,7 +72,7 @@ export async function runYahooFinanceCatalyst(flags) {
 
     await navigate(client, getEarningsUrl(symbol), 1500);
 
-    process.stdout.write(`${JSON.stringify({
+    return {
       ok: true,
       symbol,
       upcomingEarningsDate: result.upcomingEarningsDate || null,
@@ -81,8 +81,14 @@ export async function runYahooFinanceCatalyst(flags) {
       marketCap: result.marketCap || null,
       peRatio: extractNumber(result.peRatio),
       analystRating: result.analystRating || null,
-    }, null, 2)}\n`);
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runYahooFinanceCatalyst(flags) {
+  const result = await fetchYahooFinanceCatalyst(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }

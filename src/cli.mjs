@@ -137,6 +137,15 @@ function createUsageError(message) {
   });
 }
 
+async function flushAndExitIfNeeded() {
+  const exitCode = Number.isInteger(process.exitCode) ? process.exitCode : 0;
+  await Promise.all([
+    new Promise((resolve) => process.stdout.write("", resolve)),
+    new Promise((resolve) => process.stderr.write("", resolve)),
+  ]);
+  process.exit(exitCode);
+}
+
 async function main() {
   const registry = buildRegistry();
   // Extract --json before parseFlags so it isn't consumed as a key-value pair.
@@ -210,6 +219,7 @@ async function main() {
     } else {
       await cmd.handler(flags, extraArgs);
     }
+    await flushAndExitIfNeeded();
     return;
   }
 

@@ -4,7 +4,7 @@ import { parseBarchartQuoteDocument } from "./quote-helpers.mjs";
 
 export { extractNumber, parseBarchartQuoteDocument } from "./quote-helpers.mjs";
 
-export async function runBarchartQuote(flags) {
+export async function fetchBarchartQuote(flags) {
   const symbol = String(flags.symbol || "").trim().toUpperCase();
   if (!symbol) {
     throw new Error("Missing required --symbol");
@@ -32,10 +32,14 @@ export async function runBarchartQuote(flags) {
       url: result?.url,
     });
 
-    process.stdout.write(`${JSON.stringify(normalized, null, 2)}\n`);
-    const { ok: _ok, ...data } = normalized;
-    return data;
+    return normalized;
   } finally {
     await client.close();
   }
+}
+
+export async function runBarchartQuote(flags) {
+  const result = await fetchBarchartQuote(flags);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }

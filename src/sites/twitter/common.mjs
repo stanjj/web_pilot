@@ -22,8 +22,27 @@ export async function getTwitterTarget(port = DEFAULT_PORT) {
 
 export async function connectTwitterPage(port = DEFAULT_PORT) {
   const actualPort = getTwitterPort(port);
-  const target = await getTwitterTarget(actualPort);
-  const client = await connectToTarget(target);
+  const existing = await findPageTarget(
+    (target) => /(^https?:\/\/)?(www\.)?(x\.com|twitter\.com)/i.test(target.url),
+    actualPort,
+  );
+  const candidates = [];
+  if (existing) candidates.push(existing);
+  if (!existing) candidates.push(await createTarget(getTwitterUrl(), actualPort));
+
+  let lastError = null;
+  for (const target of candidates) {
+    try {
+      const client = await connectToTarget(target);
+      await autoMinimizeChromeForPort(actualPort);
+      return { client, target, port: actualPort };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const freshTarget = await createTarget(getTwitterUrl(), actualPort);
+  const client = await connectToTarget(freshTarget);
   await autoMinimizeChromeForPort(actualPort);
-  return { client, target, port: actualPort };
+  return { client, target: freshTarget, port: actualPort, recoveredFrom: lastError?.message || null };
 }

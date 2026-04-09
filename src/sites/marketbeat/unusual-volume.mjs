@@ -5,6 +5,7 @@ import {
   getMarketBeatUnusualCallUrl,
   getMarketBeatUnusualPutUrl,
 } from "./common.mjs";
+import { ensureMarketBeatPath, ensureMarketBeatReady } from "./helpers.mjs";
 
 function parsePercent(value) {
   const match = String(value || "").match(/-?\d+(?:\.\d+)?/);
@@ -23,7 +24,7 @@ function splitTickerAndCompany(value) {
   };
 }
 
-export async function runMarketBeatUnusualVolume(flags, side = "call") {
+export async function fetchMarketBeatUnusualVolume(flags, side = "call") {
   const limit = Math.min(Number(flags.limit ?? 20), 50);
   const minChange = Number(flags["min-change"] ?? 200);
   const port = getMarketBeatPort(flags.port);
@@ -32,6 +33,15 @@ export async function runMarketBeatUnusualVolume(flags, side = "call") {
 
   try {
     await navigate(client, url, 4500);
+    const snapshot = await evaluate(client, `
+      (() => ({
+        url: location.href,
+        title: document.title,
+        bodyText: (document.body?.innerText || '').slice(0, 1600)
+      }))()
+    `);
+    ensureMarketBeatReady(snapshot);
+    ensureMarketBeatPath(snapshot, side === "put" ? "/market-data/unusual-put-options-volume/" : "/market-data/unusual-call-options-volume/");
 
     const result = await evaluate(client, `
       (() => {
@@ -67,14 +77,13 @@ export async function runMarketBeatUnusualVolume(flags, side = "call") {
     `);
 
     const items = (result.items || [])
-      .map((item, index) => {
+      .map((item) => {
         const parsed = splitTickerAndCompany(item.ticker);
         const urlTicker = String(item.url || "").match(/\/stocks\/[^/]+\/([^/]+)\//i)?.[1] || "";
         const company = urlTicker && String(item.ticker || "").startsWith(urlTicker)
           ? String(item.ticker || "").slice(urlTicker.length).trim()
           : parsed.company;
         return {
-          rank: index + 1,
           ...item,
           ticker: urlTicker || parsed.ticker,
           company,
@@ -84,16 +93,27 @@ export async function runMarketBeatUnusualVolume(flags, side = "call") {
       .filter((item) => item.volumeChangePct != null && item.volumeChangePct >= minChange)
       .slice(0, limit);
 
-    process.stdout.write(`${JSON.stringify({
+    const rankedItems = items.map((item, index) => ({
+      rank: index + 1,
+      ...item,
+    }));
+
+    return {
       ok: true,
       side,
       minVolumeChangePct: minChange,
       pageTitle: result.pageTitle,
       pageUrl: result.pageUrl,
-      count: items.length,
-      items,
-    }, null, 2)}\n`);
+      count: rankedItems.length,
+      items: rankedItems,
+    };
   } finally {
     await client.close();
   }
+}
+
+export async function runMarketBeatUnusualVolume(flags, side = "call") {
+  const result = await fetchMarketBeatUnusualVolume(flags, side);
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  return result;
 }
