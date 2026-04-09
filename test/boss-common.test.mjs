@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getBossAccessIssue } from "../src/sites/boss/common.mjs";
+import { getBossAccessIssue } from "../src/sites/boss/access-helpers.mjs";
 
 test("getBossAccessIssue flags login redirects on the BOSS user page", () => {
   const issue = getBossAccessIssue({

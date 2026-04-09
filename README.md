@@ -67,7 +67,7 @@ MCP setup details live in `docs/mcp-setup.md`.
 | **xueqiu** | No | `quote`, `hot`, `watchlist` |
 | **marketbeat** | No | `news`, unusual options activity |
 | **insiderfinance** | Yes | Options flow data |
-| **tradingview** | Yes | `status`, `quote` on public pages; `historical-flow`, `live-flow` via Pineify |
+| **tradingview** | Mixed | `status`, `quote` on public TradingView pages; `historical-flow`, `live-flow` proxy to Pineify |
 | **pineify** | Yes | TradingView-linked options flow |
 | **unusual-whales** | Yes | Dark pool & options flow |
 | **whalestream** | Yes | Whale options news & summary |
@@ -233,7 +233,7 @@ Sites that require authentication read from your **already-logged-in session** i
 | **Yes** | boss, twitter, discord-app, bilibili, wechat, feishu, notion, chatgpt, grok, cursor, codex, chatwise, antigravity, linkedin, xiaohongshu, neteasemusic, weread, jimeng, insiderfinance, pineify, tradingview, unusual-whales, whalestream |
 | **No** | hackernews, barchart, yahoo-finance, xueqiu, marketbeat, reddit, v2ex, linux-do, zhihu, weibo, youtube, bbc, reuters, apple-podcasts, xiaoyuzhou, coupang, shopback, smzdm, ctrip |
 
-TradingView `status` and `quote` work against public TradingView pages. `historical-flow` and `live-flow` still use the logged-in Pineify flow endpoints behind the scenes, so keep the shared browser session signed in there before running those flow commands.
+TradingView is mixed-auth in this repo: `status` and `quote` run directly against public TradingView pages, while `historical-flow` and `live-flow` are thin aliases over the logged-in Pineify flow endpoints. Keep the shared browser session signed in to Pineify before running those flow commands.
 
 > For login-required sites: open the shared browser, log in manually once, then use the CLI freely.
 
@@ -309,7 +309,7 @@ node src/cli.mjs whalestream summary --port 9223
 # Chinese market sentiment
 node src/cli.mjs xueqiu hot --limit 20 --port 9223
 node src/cli.mjs tradingview quote --symbol AAPL --exchange NASDAQ --port 9223
-node src/cli.mjs tradingview historical-flow --symbol NVDA --limit 10 --port 9223
+node src/cli.mjs tradingview historical-flow --symbol NVDA --limit 10 --port 9223   # Pineify-backed
 node src/cli.mjs weibo hot --port 9223
 node src/cli.mjs zhihu hot --port 9223
 ```

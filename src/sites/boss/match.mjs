@@ -1,5 +1,5 @@
 import { readBossProfile } from "./profile.mjs";
-import { searchBossJobs } from "./search.mjs";
+import { searchBossJobs } from "./search-service.mjs";
 
 const ONSITE_THRESHOLDS = {
   "\u4e0a\u6d77": 600000,

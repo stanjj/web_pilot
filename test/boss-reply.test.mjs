@@ -5,7 +5,7 @@ import {
   getReplyMessageSignature,
   isClearlyArtificialMessage,
   isReplySendConfirmed,
-} from "../src/sites/boss/reply.mjs";
+} from "../src/sites/boss/reply-helpers.mjs";
 
 test("isClearlyArtificialMessage blocks obvious machine probes but allows normal job-related language", () => {
   assert.equal(isClearlyArtificialMessage("test"), true);

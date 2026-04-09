@@ -1,10 +1,14 @@
-import { buildYoutubeUrlSet } from "./utils.mjs";
+import { buildYoutubeUrlSet } from "./utils-helpers.mjs";
 
-export async function runYoutubeTranscriptGroupTest() {
+function buildSampleResult() {
   const sample = buildYoutubeUrlSet("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-  process.stdout.write(`${JSON.stringify({
+  return {
     ok: sample.videoId === "dQw4w9WgXcQ",
     command: "youtube transcript-group",
     sample,
-  }, null, 2)}\n`);
+  };
+}
+
+export async function runYoutubeTranscriptGroupTest() {
+  process.stdout.write(`${JSON.stringify(buildSampleResult(), null, 2)}\n`);
 }

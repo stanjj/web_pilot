@@ -7,7 +7,7 @@ import {
   normalizeBossNeedsReply,
   normalizeBossUnread,
   normalizeInbox,
-} from "../src/sites/boss/inbox.mjs";
+} from "../src/sites/boss/inbox-helpers.mjs";
 
 const SNAPSHOT = {
   totalUnread: 3,

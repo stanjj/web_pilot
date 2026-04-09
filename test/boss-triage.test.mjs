@@ -204,6 +204,37 @@ test("runBossTriage returns early when no threads need a reply", async () => {
   assert.deepEqual(parseOutput(writes), result);
 });
 
+test("runBossTriage still returns early when it has to lazy-load missing runtime deps", async () => {
+  const { deps, state, writes } = createHarness({
+    async fetchInboxSnapshot() {
+      return {
+        ok: true,
+        items: [
+          {
+            index: 1,
+            name: "Alice",
+            company: "Acme",
+            title: "Backend Engineer",
+            message: "已收到，稍后回复您",
+            statusClass: "message-status status-read",
+          },
+        ],
+      };
+    },
+  });
+
+  delete deps.readOpenThread;
+
+  const result = await runBossTriage({}, deps);
+
+  assert.equal(state.closeCalls, 1);
+  assert.equal(result.ok, true);
+  assert.equal(result.needsReplyCount, 0);
+  assert.equal(result.message, "No threads need a reply right now.");
+  assert.equal(state.selectArgs, undefined);
+  assert.deepEqual(parseOutput(writes), result);
+});
+
 test("runBossTriage falls back to default port and message limit for invalid flags", async () => {
   const { deps, state } = createHarness();
 

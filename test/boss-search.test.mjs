@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { normalizeBossSearchResult } from "../src/sites/boss/search.mjs";
+import { normalizeBossSearchResult } from "../src/sites/boss/search-helpers.mjs";
 
 test("normalizeBossSearchResult adds a hint for environment verification blocks", () => {
   const result = normalizeBossSearchResult({

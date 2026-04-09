@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   parseBarchartFlowResponses,
   parseBarchartFlowSymbolResponse,
-} from "../src/sites/barchart/flow.mjs";
+} from "../src/sites/barchart/flow-helpers.mjs";
 
 test("parseBarchartFlowResponses falls back to the next list and normalizes rows", () => {
   const result = parseBarchartFlowResponses(

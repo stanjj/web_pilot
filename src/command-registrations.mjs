@@ -684,19 +684,19 @@ export function buildRegistry() {
 
   registerSimple(reg, "tradingview", "status", "./sites/tradingview/status.mjs", "runTradingViewStatus", {
     category: "finance",
-    description: "TradingView public site status",
+    description: "TradingView public page status",
   });
   registerSimple(reg, "tradingview", "quote", "./sites/tradingview/quote.mjs", "runTradingViewQuote", {
     category: "finance",
-    description: "TradingView symbol page quote and metadata",
+    description: "TradingView public symbol page quote and metadata",
   });
   registerSimple(reg, "tradingview", "historical-flow", "./sites/tradingview/historical-flow.mjs", "runTradingViewHistoricalFlow", {
     category: "finance",
-    description: "TradingView historical options flow (via Pineify)",
+    description: "TradingView historical options flow proxy (via Pineify)",
   });
   registerSimple(reg, "tradingview", "live-flow", "./sites/tradingview/live-flow.mjs", "runTradingViewLiveFlow", {
     category: "finance",
-    description: "TradingView live options flow scan (via Pineify)",
+    description: "TradingView live options flow scan proxy (via Pineify)",
   });
 
   // ── twitter ────────────────────────────────────────────────────

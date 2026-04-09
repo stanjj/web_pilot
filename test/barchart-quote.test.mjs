@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractNumber, parseBarchartQuoteDocument } from "../src/sites/barchart/quote.mjs";
+import { extractNumber, parseBarchartQuoteDocument } from "../src/sites/barchart/quote-helpers.mjs";
 
 const QUOTE_TEXT = [
   "Acme Holdings (AAPL)",

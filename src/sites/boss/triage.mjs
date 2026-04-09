@@ -1,11 +1,3 @@
-import { evaluate, navigate } from "../../core/cdp.mjs";
-import {
-  connectBossPage,
-  ensureBossPageReady,
-  selectBossThread,
-  waitForSelectedBossThread,
-} from "./common.mjs";
-import { fetchInboxSnapshot, needsReply } from "./inbox.mjs";
 import { formatBossThreadSelectionError } from "./thread-selector.mjs";
 
 function toNumber(value, fallback) {
@@ -13,73 +5,42 @@ function toNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function createBossTriageDependencies(overrides = {}) {
-  return {
-    connectBossPage,
-    navigate,
-    ensureBossPageReady,
-    fetchInboxSnapshot,
-    needsReply,
-    selectBossThread,
-    waitForSelectedBossThread,
+const TRIAGE_DEP_KEYS = [
+  "connectBossPage",
+  "navigate",
+  "ensureBossPageReady",
+  "fetchInboxSnapshot",
+  "needsReply",
+  "selectBossThread",
+  "waitForSelectedBossThread",
+  "readOpenThread",
+];
+
+async function createBossTriageDependencies(overrides = {}) {
+  const base = {
     formatBossThreadSelectionError,
-    readOpenThread,
     writeOutput: (chunk) => process.stdout.write(chunk),
     ...overrides,
   };
-}
 
-/**
- * Read the currently open thread's contact info and last N messages.
- * Runs against the already-selected, already-settled conversation panel.
- *
- * @param {object} client - CDP client
- * @param {number} maxMessages - how many recent messages to return
- * @returns {Promise<{ok: boolean, contact: object, messages: object[]}>}
- */
-async function readOpenThread(client, maxMessages) {
-  return evaluate(
-    client,
-    `
-    (() => {
-      const root = document.querySelector('.chat-conversation');
-      if (!root) return { ok: false, error: 'Conversation panel not found' };
+  if (TRIAGE_DEP_KEYS.every((key) => typeof base[key] === "function")) {
+    return base;
+  }
 
-      const top = root.querySelector('.top-info-content');
-      const name = top?.querySelector('.name-text')?.textContent?.trim() || '';
-      const baseInfo = top?.querySelector('.base-info');
-      const companyNode = baseInfo
-        ? [...baseInfo.children].find(
-            (node) => node.tagName === 'SPAN' && !node.classList.contains('base-title'),
-          )
-        : null;
-      const company = companyNode?.textContent?.trim() || '';
-      const title = top?.querySelector('.base-title')?.textContent?.trim() || '';
-      const position = top?.querySelector('.position-name')?.textContent?.trim() || '';
-      const salary = top?.querySelector('.salary')?.textContent?.trim() || '';
-
-      const allMessageEls = [...root.querySelectorAll('.message-item')];
-      const messages = allMessageEls.slice(-${maxMessages}).map((el) => {
-        const cls = el.className || '';
-        let sender = 'system';
-        if (cls.includes('item-friend')) sender = 'friend';
-        if (cls.includes('item-myself')) sender = 'me';
-        return {
-          sender,
-          time: el.querySelector('.time')?.textContent?.trim() || '',
-          text: (el.querySelector('.message-content')?.innerText || el.innerText || '').trim(),
-        };
-      });
-
-      return {
-        ok: true,
-        contact: { name, company, title },
-        position: { name: position, salary },
-        messages,
-      };
-    })()
-  `,
-  );
+  const runtime = await import("./triage-runtime.mjs");
+  return {
+    connectBossPage: runtime.connectBossPage,
+    navigate: runtime.navigate,
+    ensureBossPageReady: runtime.ensureBossPageReady,
+    fetchInboxSnapshot: runtime.fetchInboxSnapshot,
+    needsReply: runtime.needsReply,
+    selectBossThread: runtime.selectBossThread,
+    waitForSelectedBossThread: runtime.waitForSelectedBossThread,
+    readOpenThread: runtime.readOpenThread,
+    formatBossThreadSelectionError,
+    writeOutput: (chunk) => process.stdout.write(chunk),
+    ...overrides,
+  };
 }
 
 /**
@@ -95,7 +56,7 @@ async function readOpenThread(client, maxMessages) {
  *   --port <n>      CDP port (default: 9223)
  */
 export async function runBossTriage(flags, overrides = {}) {
-  const deps = createBossTriageDependencies(overrides);
+  const deps = await createBossTriageDependencies(overrides);
   const port = toNumber(flags.port, 9223);
   const maxMessages = toNumber(flags.messages, 10);
 

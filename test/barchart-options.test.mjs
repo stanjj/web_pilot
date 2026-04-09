@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classifyMoneyness, parseBarchartOptionsResponse } from "../src/sites/barchart/options.mjs";
+import { classifyMoneyness, parseBarchartOptionsResponse } from "../src/sites/barchart/options-helpers.mjs";
 
 const OPTIONS_TEXT = JSON.stringify({
   data: [

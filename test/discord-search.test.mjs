@@ -11,7 +11,7 @@ import {
   normalizeDiscordServerTitle,
   resolveDiscordServerSelection,
   quoteDiscordSearchValue,
-} from "../src/sites/discord-app/search.mjs";
+} from "../src/sites/discord-app/search-helpers.mjs";
 
 test("buildDiscordSearchQuery combines Discord filter shortcuts with text query", () => {
   assert.equal(

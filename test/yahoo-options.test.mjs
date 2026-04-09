@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseYahooExpiration, parseYahooFinanceOptionsResponse } from "../src/sites/yahoo-finance/options.mjs";
+import { parseYahooExpiration, parseYahooFinanceOptionsResponse } from "../src/sites/yahoo-finance/options-helpers.mjs";
 
 const OPTIONS_TEXT = JSON.stringify({
   optionChain: {

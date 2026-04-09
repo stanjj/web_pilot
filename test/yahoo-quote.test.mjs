@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractNumber, parseYahooFinanceQuoteDocument } from "../src/sites/yahoo-finance/quote.mjs";
+import { extractNumber, parseYahooFinanceQuoteDocument } from "../src/sites/yahoo-finance/quote-helpers.mjs";
 
 const QUOTE_TEXT = [
   "Vanguard S&P 500 ETF (VOO)",

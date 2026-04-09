@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getTradingViewSymbolUrl } from "../src/sites/tradingview/common.mjs";
-import { extractTradingViewNumber, isTradingViewSymbolMatch, parseTradingViewQuoteSnapshot, resolveTradingViewSymbolIdentity } from "../src/sites/tradingview/quote.mjs";
-import { summarizeTradingViewStatusSnapshot } from "../src/sites/tradingview/status.mjs";
+import { getTradingViewSymbolUrl } from "../src/sites/tradingview/common-helpers.mjs";
+import { extractTradingViewNumber, isTradingViewSymbolMatch, parseTradingViewQuoteSnapshot, resolveTradingViewSymbolIdentity } from "../src/sites/tradingview/quote-helpers.mjs";
+import { summarizeTradingViewStatusSnapshot } from "../src/sites/tradingview/status-helpers.mjs";
 
 test("getTradingViewSymbolUrl normalizes bare and exchange-qualified symbols", () => {
   assert.equal(getTradingViewSymbolUrl("AAPL"), "https://www.tradingview.com/symbols/AAPL/");
