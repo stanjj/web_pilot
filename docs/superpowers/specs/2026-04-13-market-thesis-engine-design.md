@@ -54,7 +54,7 @@ All `market` commands return this envelope:
     "source": "barchart"
   },
   "sentiment": {
-    "score": 0,
+    "score": 0,        // -1.0 (very bearish) to +1.0 (very bullish); 0 = neutral/unknown
     "hot_rank": null,
     "mentions": 0,
     "sources": []
@@ -141,10 +141,12 @@ src/sites/market/
 
 ### Thesis Rule Engine (no LLM)
 
-Bias determination (majority vote across signals):
-- `flow.net_sentiment` → bullish / bearish / neutral vote
-- `flow.put_call_ratio` → <0.7 bullish, >1.3 bearish
-- `technicals.trend` → directional vote
+Bias determination (majority vote across 3 signals):
+- `flow.net_sentiment` → derived from per-source sentiment labels; majority wins, tie → neutral
+- `flow.put_call_ratio` → <0.7 bullish, >1.3 bearish, else neutral
+- `technicals.trend` → directional vote from barchart/tradingview rating
+
+Final `bias` = majority of the three votes; ties resolve to neutral.
 
 Confidence = `sources_ok.length / total_sources_attempted`
 
