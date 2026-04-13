@@ -16,6 +16,11 @@ const USAGE = {
   "sites:coverage":        "node src/cli.mjs sites coverage",
   "market:scan":           "node src/cli.mjs market scan [--symbols SPY,QQQ,IWM,AAPL,NVDA,TSLA] [--limit 10] [--all] [--port 9223]",
   "market:drilldown":      "node src/cli.mjs market drilldown --symbol QQQ [--limit 5] [--port 9223]",
+  "market:flow":           "node src/cli.mjs market flow --symbol NVDA [--quick] [--port 9223]",
+  "market:quote":          "node src/cli.mjs market quote --symbol NVDA [--quick] [--port 9223]",
+  "market:technicals":     "node src/cli.mjs market technicals --symbol NVDA [--quick] [--port 9223]",
+  "market:sentiment":      "node src/cli.mjs market sentiment --symbol NVDA [--quick] [--port 9223]",
+  "market:thesis":         "node src/cli.mjs market thesis --symbol NVDA [--quick] [--port 9223]",
   // apple-podcasts
   "apple-podcasts:search":   "node src/cli.mjs apple-podcasts search --keyword <text> [--limit 10]",
   "apple-podcasts:top":      "node src/cli.mjs apple-podcasts top [--country us] [--limit 20]",
@@ -39,8 +44,11 @@ const USAGE = {
   "barchart:flow-symbol":    "node src/cli.mjs barchart flow-symbol --symbol QQQ [--type all|call|put] [--limit 20] [--port 9223]",
   "barchart:technicals":     "node src/cli.mjs barchart technicals --symbol QQQ [--port 9223]",
   "barchart:put-call-ratio": "node src/cli.mjs barchart put-call-ratio --symbol QQQ [--expiration YYYY-MM-DD] [--port 9223]",
+  "barchart:vol-skew":       "node src/cli.mjs barchart vol-skew --symbol QQQ [--expiration YYYY-MM-DD] [--limit 20] [--port 9223]",
+  "barchart:summary":        "node src/cli.mjs barchart summary --symbol QQQ [--port 9223]",
   // bbc
-  "bbc:news": "node src/cli.mjs bbc news [--limit 20] [--port 9223]",
+  "bbc:news":     "node src/cli.mjs bbc news [--limit 20] [--port 9223]",
+  "bbc:category": "node src/cli.mjs bbc category [--category world|business|technology|science|health|politics] [--limit 20] [--port 9223]",
   // bilibili
   "bilibili:hot":         "node src/cli.mjs bilibili hot [--limit 20] [--port 9223]",
   "bilibili:search":      "node src/cli.mjs bilibili search --keyword <text> [--type video|user] [--limit 20] [--port 9223]",
@@ -132,9 +140,13 @@ const USAGE = {
   "feishu:send":   "node src/cli.mjs feishu send --text <text>",
   // grok
   "grok:status": "node src/cli.mjs grok status [--port 9223]",
+  "grok:read":   "node src/cli.mjs grok read [--port 9223]",
   "grok:ask":    "node src/cli.mjs grok ask --text <text>",
   // hackernews
-  "hackernews:top": "node src/cli.mjs hackernews top [--limit 20] [--port 9223]",
+  "hackernews:top":  "node src/cli.mjs hackernews top [--limit 20] [--port 9223]",
+  "hackernews:new":  "node src/cli.mjs hackernews new [--limit 20] [--port 9223]",
+  "hackernews:show": "node src/cli.mjs hackernews show [--limit 20] [--port 9223]",
+  "hackernews:ask":  "node src/cli.mjs hackernews ask [--limit 20] [--port 9223]",
   // insiderfinance
   "insiderfinance:status": "node src/cli.mjs insiderfinance status [--port 9223]",
   "insiderfinance:flow":   "node src/cli.mjs insiderfinance flow [--limit 15] [--port 9223]",
@@ -196,7 +208,8 @@ const USAGE = {
   "reddit:subscribe":     "node src/cli.mjs reddit subscribe --subreddit <name> [--undo]",
   "reddit:upvote":        "node src/cli.mjs reddit upvote --post_id <id-or-url> [--direction up|down|none]",
   // reuters
-  "reuters:search": "node src/cli.mjs reuters search --query <text> [--limit 10] [--port 9223]",
+  "reuters:search":    "node src/cli.mjs reuters search --query <text> [--limit 10] [--port 9223]",
+  "reuters:headlines": "node src/cli.mjs reuters headlines [--section world|business|technology|markets] [--limit 15] [--port 9223]",
   // shopback
   "shopback:status":           "node src/cli.mjs shopback status [--port 9223]",
   "shopback:categories":       "node src/cli.mjs shopback categories [--limit 20] [--port 9223]",
@@ -264,7 +277,8 @@ const USAGE = {
   "wechat:search":   "node src/cli.mjs wechat search --query <text> [--port 9223]",
   "wechat:send":     "node src/cli.mjs wechat send --text <text>",
   // weibo
-  "weibo:hot": "node src/cli.mjs weibo hot [--limit 30] [--port 9223]",
+  "weibo:hot":    "node src/cli.mjs weibo hot [--limit 30] [--port 9223]",
+  "weibo:search": "node src/cli.mjs weibo search --query <text> [--limit 20] [--port 9223]",
   // weread
   "weread:search":     "node src/cli.mjs weread search <keyword> [--limit 10]",
   "weread:ranking":    "node src/cli.mjs weread ranking [category] [--limit 20]",
@@ -304,6 +318,7 @@ const USAGE = {
   "xueqiu:search":     "node src/cli.mjs xueqiu search --query <text> [--limit 10] [--port 9223]",
   "xueqiu:stock":      "node src/cli.mjs xueqiu stock --symbol <symbol> [--port 9223]",
   "xueqiu:watchlist":  "node src/cli.mjs xueqiu watchlist [--category 1|2|3] [--limit 20] [--port 9223]",
+  "xueqiu:symbol-sentiment": "node src/cli.mjs xueqiu symbol-sentiment --symbol NVDA [--port 9223]",
   // yahoo-finance
   "yahoo-finance:quote":          "node src/cli.mjs yahoo-finance quote --symbol QQQ [--port 9223]",
   "yahoo-finance:catalyst":       "node src/cli.mjs yahoo-finance catalyst --symbol QQQ [--limit 5] [--port 9223]",
@@ -416,6 +431,63 @@ export function buildRegistry() {
     },
   });
 
+  // ── market thesis engine ────────────────────────────────────────
+
+  reg.register({
+    site: "market", action: "flow", name: "market flow",
+    category: "finance",
+    description: "Aggregate options flow across barchart, unusual-whales, and whalestream",
+    usage: "node src/cli.mjs market flow --symbol NVDA [--quick] [--port 9223]",
+    handler: async (flags) => {
+      const { runMarketFlow } = await import("./sites/market/flow.mjs");
+      return runMarketFlow(flags);
+    },
+  });
+
+  reg.register({
+    site: "market", action: "quote", name: "market quote",
+    category: "finance",
+    description: "Unified quote: barchart primary, yahoo-finance fallback",
+    usage: "node src/cli.mjs market quote --symbol NVDA [--quick] [--port 9223]",
+    handler: async (flags) => {
+      const { runMarketQuote } = await import("./sites/market/quote.mjs");
+      return runMarketQuote(flags);
+    },
+  });
+
+  reg.register({
+    site: "market", action: "technicals", name: "market technicals",
+    category: "finance",
+    description: "Technical signals for a symbol via barchart",
+    usage: "node src/cli.mjs market technicals --symbol NVDA [--quick] [--port 9223]",
+    handler: async (flags) => {
+      const { runMarketTechnicals } = await import("./sites/market/technicals.mjs");
+      return runMarketTechnicals(flags);
+    },
+  });
+
+  reg.register({
+    site: "market", action: "sentiment", name: "market sentiment",
+    category: "finance",
+    description: "Aggregate sentiment from xueqiu, weibo, zhihu, reddit",
+    usage: "node src/cli.mjs market sentiment --symbol NVDA [--quick] [--port 9223]",
+    handler: async (flags) => {
+      const { runMarketSentiment } = await import("./sites/market/sentiment.mjs");
+      return runMarketSentiment(flags);
+    },
+  });
+
+  reg.register({
+    site: "market", action: "thesis", name: "market thesis",
+    category: "finance",
+    description: "Full market thesis: flow + quote + technicals + sentiment → bias/confidence/flags",
+    usage: "node src/cli.mjs market thesis --symbol NVDA [--quick] [--port 9223]",
+    handler: async (flags) => {
+      const { runMarketThesis } = await import("./sites/market/thesis.mjs");
+      return runMarketThesis(flags);
+    },
+  });
+
   // ── apple-podcasts ─────────────────────────────────────────────
 
   registerSimple(reg, "apple-podcasts", "search", "./sites/apple-podcasts/search.mjs", "runApplePodcastsSearch", { category: "media" });
@@ -444,6 +516,8 @@ export function buildRegistry() {
   registerSimple(reg, "barchart", "flow-symbol", "./sites/barchart/flow-symbol.mjs", "runBarchartFlowSymbol", { category: "finance" });
   registerSimple(reg, "barchart", "technicals", "./sites/barchart/technicals.mjs", "runBarchartTechnicals", { category: "finance" });
   registerSimple(reg, "barchart", "put-call-ratio", "./sites/barchart/put-call-ratio.mjs", "runBarchartPutCallRatio", { category: "finance" });
+  registerSimple(reg, "barchart", "vol-skew", "./sites/barchart/vol-skew.mjs", "runBarchartVolSkew", { category: "finance" });
+  registerSimple(reg, "barchart", "summary", "./sites/barchart/summary.mjs", "runBarchartSummary", { category: "finance" });
 
   // ── bilibili ───────────────────────────────────────────────────
 
@@ -463,6 +537,7 @@ export function buildRegistry() {
   // ── bbc ────────────────────────────────────────────────────────
 
   registerSimple(reg, "bbc", "news", "./sites/bbc/news.mjs", "runBbcNews", { category: "news" });
+  registerSimple(reg, "bbc", "category", "./sites/bbc/category.mjs", "runBbcCategory", { category: "news" });
 
   // ── chatgpt ────────────────────────────────────────────────────
 
@@ -543,6 +618,7 @@ export function buildRegistry() {
   // ── grok ───────────────────────────────────────────────────────
 
   registerSimple(reg, "grok", "status", "./sites/grok/status.mjs", "runGrokStatus", { category: "ai" });
+  registerSimple(reg, "grok", "read", "./sites/grok/read.mjs", "runGrokRead", { category: "ai" });
   registerSimple(reg, "grok", "ask", "./sites/grok/ask.mjs", "runGrokAsk", { category: "ai" });
 
   // ── yahoo-finance ──────────────────────────────────────────────
@@ -557,6 +633,9 @@ export function buildRegistry() {
   // ── hackernews ─────────────────────────────────────────────────
 
   registerSimple(reg, "hackernews", "top", "./sites/hackernews/top.mjs", "runHackerNewsTop", { category: "news" });
+  registerSimple(reg, "hackernews", "new", "./sites/hackernews/new.mjs", "runHackerNewsNew", { category: "news" });
+  registerSimple(reg, "hackernews", "show", "./sites/hackernews/new.mjs", "runHackerNewsShow", { category: "news" });
+  registerSimple(reg, "hackernews", "ask", "./sites/hackernews/new.mjs", "runHackerNewsAsk", { category: "news" });
 
   // ── jimeng ─────────────────────────────────────────────────────
 
@@ -654,6 +733,7 @@ export function buildRegistry() {
   // ── reuters ────────────────────────────────────────────────────
 
   registerSimple(reg, "reuters", "search", "./sites/reuters/search.mjs", "runReutersSearch", { category: "news" });
+  registerSimple(reg, "reuters", "headlines", "./sites/reuters/headlines.mjs", "runReutersHeadlines", { category: "news" });
 
   // ── shopback ───────────────────────────────────────────────────
 
@@ -750,6 +830,7 @@ export function buildRegistry() {
   // ── weibo ──────────────────────────────────────────────────────
 
   registerSimple(reg, "weibo", "hot", "./sites/weibo/hot.mjs", "runWeiboHot", { category: "social" });
+  registerSimple(reg, "weibo", "search", "./sites/weibo/search.mjs", "runWeiboSearch", { category: "social" });
 
   // ── weread (special: positional args) ──────────────────────────
 
@@ -839,6 +920,7 @@ export function buildRegistry() {
   registerSimple(reg, "xueqiu", "search", "./sites/xueqiu/search.mjs", "runXueqiuSearch", { category: "finance" });
   registerSimple(reg, "xueqiu", "stock", "./sites/xueqiu/stock.mjs", "runXueqiuStock", { category: "finance" });
   registerSimple(reg, "xueqiu", "watchlist", "./sites/xueqiu/watchlist.mjs", "runXueqiuWatchlist", { category: "finance" });
+  registerSimple(reg, "xueqiu", "symbol-sentiment", "./sites/xueqiu/symbol-sentiment.mjs", "runXueqiuSymbolSentiment", { category: "finance" });
 
   // ── zhihu ──────────────────────────────────────────────────────
 
