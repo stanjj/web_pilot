@@ -126,3 +126,23 @@ export async function runUnusualWhalesFlow(flags) {
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   return result;
 }
+
+/**
+ * Normalize unusual-whales flow fetch result to the shared flow trade schema.
+ * @param {object|null} data  Return value of fetchUnusualWhalesFlow()
+ * @returns {Array<{ ticker, side, sentiment, premiumValue, premium, strike, expiry, size, source }>}
+ */
+export function toFlowTrades(data) {
+  if (!data?.ok || !Array.isArray(data.items)) return [];
+  return data.items.map((item) => ({
+    ticker: item.ticker ?? null,
+    side: item.side ?? null,
+    sentiment: item.sentiment ?? null,
+    premiumValue: item.premiumValue ?? null,
+    premium: item.premium ?? null,
+    strike: item.strike ?? null,
+    expiry: item.expiry ?? null,
+    size: item.size ?? null,
+    source: "unusual-whales",
+  }));
+}

@@ -100,3 +100,24 @@ export async function runWhaleStreamSummary(flags) {
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   return result;
 }
+
+/**
+ * Normalize whalestream summary fetch result to the shared flow trade schema.
+ * Whalestream topOptionsFlow items lack side/strike/expiry — those fields are null.
+ * @param {object|null} data  Return value of fetchWhaleStreamSummary()
+ * @returns {Array<{ ticker, side, sentiment, premiumValue, premium, strike, expiry, size, source }>}
+ */
+export function toFlowTrades(data) {
+  if (!data?.ok || !Array.isArray(data.topOptionsFlow)) return [];
+  return data.topOptionsFlow.map((item) => ({
+    ticker: item.ticker ?? null,
+    side: null,
+    sentiment: null,
+    premiumValue: null,
+    premium: item.premium ?? null,
+    strike: null,
+    expiry: null,
+    size: null,
+    source: "whalestream",
+  }));
+}

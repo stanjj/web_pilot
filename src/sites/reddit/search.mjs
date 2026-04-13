@@ -54,11 +54,14 @@ export async function runRedditSearch(flags) {
     `);
 
     if (!result?.ok) {
-      process.stdout.write(`${JSON.stringify({ ok: false, query, status: result?.status ?? null, message: "Reddit search request failed.", body: result?.body || "" }, null, 2)}\n`);
+      const errorResult = { ok: false, query, status: result?.status ?? null, message: "Reddit search request failed.", body: result?.body || "" };
+      process.stdout.write(`${JSON.stringify(errorResult, null, 2)}\n`);
       process.exitCode = 1;
-      return;
+      return errorResult;
     }
-    process.stdout.write(`${JSON.stringify({ ok: true, query, subreddit: subreddit || null, count: result.count, items: result.items || [] }, null, 2)}\n`);
+    const successResult = { ok: true, query, subreddit: subreddit || null, count: result.count, items: result.items || [] };
+    process.stdout.write(`${JSON.stringify(successResult, null, 2)}\n`);
+    return successResult;
   } finally {
     await client.close();
   }
