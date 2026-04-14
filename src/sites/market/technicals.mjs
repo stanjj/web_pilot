@@ -1,22 +1,38 @@
 import { aggregate } from "../../core/market-aggregator.mjs";
 import { fetchBarchartTechnicals, toTechnicalsSchema } from "../barchart/technicals.mjs";
+import { fetchTradingViewTechnicals } from "../tradingview/technicals.mjs";
 
 /**
- * Pick the best available technicals result (barchart preferred).
+ * Merge technicals from barchart and tradingview conservatively.
+ * When both sources agree, use the shared trend. When they disagree, resolve to sideways.
  * @param {Array<{ name: string, data: unknown }>} succeeded
  * @returns {{ trend, rsi, signals, source } | null}
  */
 export function mergeTechnicalsResults(succeeded) {
-  const priority = ["barchart"];
-  for (const preferred of priority) {
-    const entry = succeeded.find((s) => s.name === preferred);
-    if (entry) {
-      const normalized =
-        preferred === "barchart" ? toTechnicalsSchema(entry.data) : null;
-      if (normalized) return normalized;
+  const barchartEntry = succeeded.find((s) => s.name === "barchart");
+  const tradingviewEntry = succeeded.find((s) => s.name === "tradingview");
+
+  const barchartNormalized = barchartEntry ? toTechnicalsSchema(barchartEntry.data) : null;
+  const tradingviewNormalized = tradingviewEntry?.data?.ok ? tradingviewEntry.data.technicals : null;
+
+  if (barchartNormalized && tradingviewNormalized) {
+    if (barchartNormalized.trend !== tradingviewNormalized.trend) {
+      return {
+        trend: "sideways",
+        rsi: barchartNormalized.rsi ?? tradingviewNormalized.rsi ?? null,
+        signals: [...(barchartNormalized.signals ?? []), ...(tradingviewNormalized.signals ?? [])],
+        source: "barchart+tradingview",
+      };
     }
+    return {
+      trend: barchartNormalized.trend,
+      rsi: barchartNormalized.rsi ?? tradingviewNormalized.rsi ?? null,
+      signals: [...(barchartNormalized.signals ?? []), ...(tradingviewNormalized.signals ?? [])],
+      source: "barchart+tradingview",
+    };
   }
-  return null;
+
+  return barchartNormalized || tradingviewNormalized || null;
 }
 
 export async function fetchMarketTechnicals(flags) {
@@ -28,6 +44,7 @@ export async function fetchMarketTechnicals(flags) {
   const { data: technicals, meta } = await aggregate({
     sources: [
       { name: "barchart", fetch: () => fetchBarchartTechnicals({ symbol, port }) },
+      { name: "tradingview", fetch: () => fetchTradingViewTechnicals({ symbol, port }) },
     ],
     timeoutMs,
     merge: mergeTechnicalsResults,

@@ -44,3 +44,11 @@ test("mergeTechnicalsResults picks barchart when available", () => {
 test("mergeTechnicalsResults returns null when no sources", () => {
   assert.equal(mergeTechnicalsResults([]), null);
 });
+
+test("mergeTechnicalsResults returns sideways when barchart and tradingview disagree", () => {
+  const result = mergeTechnicalsResults([
+    { name: "barchart", data: { ok: true, technicalRating: "Buy", rsi14: 62 } },
+    { name: "tradingview", data: { ok: true, technicals: { trend: "down", rsi: null, signals: ["Strong Sell"], source: "tradingview" } } },
+  ]);
+  assert.equal(result.trend, "sideways");
+});
