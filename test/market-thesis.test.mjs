@@ -40,6 +40,28 @@ test("buildFlags detects large premium", () => {
   assert.ok(flags.some((f) => f.includes("large-premium")));
 });
 
+test("buildFlags detects extreme put-call ratio", () => {
+  const flags = buildFlags([], { putCallRatio: 1.45, volSkewMaxAbs: null });
+  assert.ok(flags.some((flag) => flag.includes("extreme put/call")));
+});
+
+test("buildFlags detects high vol-skew divergence", () => {
+  const flags = buildFlags([], { putCallRatio: null, volSkewMaxAbs: 0.18 });
+  assert.ok(flags.some((flag) => flag.includes("vol-skew")));
+});
+
+test("buildThesis preserves elapsedMs in meta", () => {
+  const result = buildThesis({
+    symbol: "NVDA",
+    flow: null,
+    quote: null,
+    technicals: null,
+    sentiment: null,
+    meta: { sources_ok: [], sources_skipped: [], elapsedMs: 1234, command: "market thesis" },
+  });
+  assert.equal(result.meta.elapsedMs, 1234);
+});
+
 test("buildThesis returns complete structure", () => {
   const result = buildThesis({
     symbol: "NVDA",

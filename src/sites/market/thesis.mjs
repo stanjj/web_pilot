@@ -46,11 +46,12 @@ export function computeConfidence(sourcesOk, sourcesSkipped) {
 }
 
 /**
- * Build anomaly flag strings from notable trades.
+ * Build anomaly flag strings from notable trades and market signals.
  * @param {Array<{ ticker, expiry, premiumValue, side }>} trades
+ * @param {{ putCallRatio?: number|null, volSkewMaxAbs?: number|null }} signals
  * @returns {string[]}
  */
-export function buildFlags(trades) {
+export function buildFlags(trades, signals = {}) {
   const flags = [];
   const today = Date.now();
   for (const trade of trades) {
@@ -62,6 +63,15 @@ export function buildFlags(trades) {
       flags.push(`large-premium: ${trade.ticker} ${trade.side} $${(trade.premiumValue / 1_000_000).toFixed(1)}M`);
     }
   }
+
+  if (signals.putCallRatio != null && (signals.putCallRatio < 0.7 || signals.putCallRatio > 1.3)) {
+    flags.push(`extreme put/call ratio: ${signals.putCallRatio}`);
+  }
+
+  if (signals.volSkewMaxAbs != null && signals.volSkewMaxAbs >= 0.1) {
+    flags.push(`high vol-skew divergence: ${signals.volSkewMaxAbs}`);
+  }
+
   return flags;
 }
 
@@ -77,7 +87,13 @@ export function buildThesis({ symbol, flow, quote, technicals, sentiment, meta }
     technicals: technicals?.trend ?? null,
   });
   const confidence = computeConfidence(meta?.sources_ok ?? [], meta?.sources_skipped ?? []);
-  const flags = buildFlags(flow?.notable_trades ?? []);
+  const volSkewMaxAbs = Array.isArray(flow?.vol_skew)
+    ? flow.vol_skew.reduce((acc, row) => Math.max(acc, Math.abs(Number(row?.skew) || 0)), 0)
+    : null;
+  const flags = buildFlags(flow?.notable_trades ?? [], {
+    putCallRatio: flow?.put_call_ratio ?? null,
+    volSkewMaxAbs,
+  });
 
   const summary = [
     `${symbol}: bias=${bias}, confidence=${confidence}`,
@@ -98,11 +114,17 @@ export function buildThesis({ symbol, flow, quote, technicals, sentiment, meta }
     technicals: technicals ?? null,
     sentiment: sentiment ?? null,
     thesis: { bias, confidence, summary, flags },
-    meta,
+    meta: {
+      sources_ok: meta?.sources_ok ?? [],
+      sources_skipped: meta?.sources_skipped ?? [],
+      elapsedMs: meta?.elapsedMs ?? 0,
+      command: "market thesis",
+    },
   };
 }
 
 export async function fetchMarketThesis(flags) {
+  const startedAt = Date.now();
   const symbol = String(flags.symbol || "").trim().toUpperCase();
   if (!symbol) throw new Error("Missing required --symbol");
   const childFlags = { ...flags, symbol };
@@ -117,29 +139,23 @@ export async function fetchMarketThesis(flags) {
   const allSourcesOk = [];
   const allSourcesSkipped = [];
 
-  const get = (result) => {
-    if (result.status === "fulfilled" && result.value?.ok) {
-      allSourcesOk.push(...(result.value.meta?.sources_ok ?? []));
-      allSourcesSkipped.push(...(result.value.meta?.sources_skipped ?? []));
-      return result.value;
-    }
-    return null;
+  const pickDimension = (result, key) => {
+    if (result.status !== "fulfilled" || !result.value?.ok) return null;
+    allSourcesOk.push(...(result.value.meta?.sources_ok ?? []));
+    allSourcesSkipped.push(...(result.value.meta?.sources_skipped ?? []));
+    return result.value[key] ?? null;
   };
-
-  const flowData = get(flowResult);
-  const quoteData = get(quoteResult);
-  const techData = get(technicalsResult);
-  const sentimentData = get(sentimentResult);
 
   return buildThesis({
     symbol,
-    flow: flowData?.flow ?? null,
-    quote: quoteData?.quote ?? null,
-    technicals: techData?.technicals ?? null,
-    sentiment: sentimentData?.sentiment ?? null,
+    flow: pickDimension(flowResult, "flow"),
+    quote: pickDimension(quoteResult, "quote"),
+    technicals: pickDimension(technicalsResult, "technicals"),
+    sentiment: pickDimension(sentimentResult, "sentiment"),
     meta: {
       sources_ok: allSourcesOk,
       sources_skipped: allSourcesSkipped,
+      elapsedMs: Date.now() - startedAt,
       command: "market thesis",
     },
   });
