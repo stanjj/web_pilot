@@ -155,6 +155,7 @@ const USAGE = {
   "jimeng:generate": "node src/cli.mjs jimeng generate --text <prompt>",
   // linkedin
   "linkedin:search": "node src/cli.mjs linkedin search --query <text> [--location <text>] [--limit 10] [--port 9223]",
+  "linkedin:login-state": "node src/cli.mjs linkedin login-state [--port 9223]",
   // linux-do
   "linux-do:hot":        "node src/cli.mjs linux-do hot [--period weekly] [--limit 20] [--port 9223]",
   "linux-do:latest":     "node src/cli.mjs linux-do latest [--limit 20] [--port 9223]",
@@ -236,8 +237,10 @@ const USAGE = {
   "tradingview:quote": "node src/cli.mjs tradingview quote --symbol AAPL [--exchange NASDAQ] [--port 9223]",
   "tradingview:historical-flow": "node src/cli.mjs tradingview historical-flow [--symbol AAPL] [--limit 20] [--port 9223]",
   "tradingview:live-flow": "node src/cli.mjs tradingview live-flow [--symbols SPY,QQQ,AAPL] [--min-volume-ratio 2] [--limit 20] [--port 9223]",
+  "tradingview:technicals": "node src/cli.mjs tradingview technicals --symbol AAPL [--exchange NASDAQ] [--port 9223]",
   // twitter
   "twitter:trending":      "node src/cli.mjs twitter trending [--limit 20] [--port 9223]",
+  "twitter:login-state":   "node src/cli.mjs twitter login-state [--port 9223]",
   "twitter:profile":       "node src/cli.mjs twitter profile --username <handle> [--port 9223]",
   "twitter:search":        "node src/cli.mjs twitter search --query <text> [--port 9223]",
   "twitter:thread":        "node src/cli.mjs twitter thread --url <tweet-url-or-id> [--port 9223]",
@@ -645,6 +648,7 @@ export function buildRegistry() {
   // ── linkedin ───────────────────────────────────────────────────
 
   registerSimple(reg, "linkedin", "search", "./sites/linkedin/search.mjs", "runLinkedinSearch", { category: "social" });
+  registerSimple(reg, "linkedin", "login-state", "./sites/linkedin/login-state.mjs", "runLinkedinLoginState", { category: "social" });
 
   // ── linux-do ───────────────────────────────────────────────────
 
@@ -778,10 +782,15 @@ export function buildRegistry() {
     category: "finance",
     description: "TradingView live options flow scan proxy (via Pineify)",
   });
+  registerSimple(reg, "tradingview", "technicals", "./sites/tradingview/technicals.mjs", "runTradingViewTechnicals", {
+    category: "finance",
+    description: "TradingView technical summary (trend, oscillators, moving averages)",
+  });
 
   // ── twitter ────────────────────────────────────────────────────
 
   registerSimple(reg, "twitter", "trending", "./sites/twitter/trending.mjs", "runTwitterTrending", { category: "social" });
+  registerSimple(reg, "twitter", "login-state", "./sites/twitter/login-state.mjs", "runTwitterLoginState", { category: "social" });
   registerSimple(reg, "twitter", "profile", "./sites/twitter/profile.mjs", "runTwitterProfile", { category: "social" });
   registerSimple(reg, "twitter", "search", "./sites/twitter/search.mjs", "runTwitterSearch", { category: "social" });
   registerSimple(reg, "twitter", "thread", "./sites/twitter/thread.mjs", "runTwitterThread", { category: "social" });
