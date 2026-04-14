@@ -1,5 +1,6 @@
 import { aggregate } from "../../core/market-aggregator.mjs";
 import { fetchBarchartFlowSymbol } from "../barchart/flow-symbol.mjs";
+import { fetchBarchartPutCallRatio } from "../barchart/put-call-ratio.mjs";
 import { fetchUnusualWhalesFlow, toFlowTrades as uwToFlowTrades } from "../unusual-whales/flow.mjs";
 import { fetchWhaleStreamSummary, toFlowTrades as wsToFlowTrades } from "../whalestream/summary.mjs";
 
@@ -10,7 +11,13 @@ import { fetchWhaleStreamSummary, toFlowTrades as wsToFlowTrades } from "../whal
  */
 export function mergeFlowResults(succeeded) {
   const allTrades = [];
+  let putCallRatio = null;
+
   for (const { name, data } of succeeded) {
+    if (name === "barchart-ratio" && data?.ok) {
+      putCallRatio = data.putCallRatio?.volume ?? data.putCallRatio?.openInterest ?? null;
+      continue;
+    }
     if (name === "unusual-whales") allTrades.push(...uwToFlowTrades(data));
     else if (name === "whalestream") allTrades.push(...wsToFlowTrades(data));
     else if (name === "barchart" && data?.ok && Array.isArray(data.items)) {
@@ -51,7 +58,7 @@ export function mergeFlowResults(succeeded) {
 
   return {
     net_sentiment: netSentiment,
-    put_call_ratio: null,
+    put_call_ratio: putCallRatio,
     notable_trades: notableTrades,
     sources: succeeded.map((s) => s.name),
   };
@@ -70,6 +77,7 @@ export async function fetchMarketFlow(flags) {
   const { data: flow, meta } = await aggregate({
     sources: [
       { name: "barchart", fetch: () => fetchBarchartFlowSymbol({ symbol, port }) },
+      { name: "barchart-ratio", fetch: () => fetchBarchartPutCallRatio({ symbol, port }) },
       { name: "unusual-whales", fetch: () => fetchUnusualWhalesFlow({ port, limit: 30 }) },
       { name: "whalestream", fetch: () => fetchWhaleStreamSummary({ port }) },
     ],

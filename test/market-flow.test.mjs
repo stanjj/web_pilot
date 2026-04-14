@@ -102,3 +102,31 @@ test("mergeFlowResults limits notable_trades to top 5 by premiumValue", () => {
   assert.equal(result.notable_trades.length, 5);
   assert.equal(result.notable_trades[0].ticker, "SYM0");
 });
+
+test("mergeFlowResults uses barchart put/call ratio when available", () => {
+  const result = mergeFlowResults([
+    {
+      name: "barchart-ratio",
+      data: {
+        ok: true,
+        putCallRatio: { volume: 0.72, openInterest: 0.81 },
+      },
+    },
+  ]);
+
+  assert.equal(result.put_call_ratio, 0.72);
+});
+
+test("mergeFlowResults keeps the ratio source name in sources", () => {
+  const result = mergeFlowResults([
+    {
+      name: "barchart-ratio",
+      data: {
+        ok: true,
+        putCallRatio: { volume: 0.72, openInterest: 0.81 },
+      },
+    },
+  ]);
+
+  assert.deepEqual(result.sources, ["barchart-ratio"]);
+});
