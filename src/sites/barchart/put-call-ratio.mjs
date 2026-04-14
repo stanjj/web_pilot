@@ -180,3 +180,96 @@ export async function runBarchartPutCallRatio(flags) {
     await client.close();
   }
 }
+
+// ── Pure computation helpers (no I/O) ────────────────────────────────────────
+
+export function pickNearestExpirationItems(items) {
+  const expirations = [...new Set(
+    items
+      .map((item) => (item?.raw || item)?.expirationDate || null)
+      .filter(Boolean),
+  )].sort((a, b) => Date.parse(a) - Date.parse(b));
+
+  const nearest = expirations[0];
+  if (!nearest) return items;
+  return items.filter((item) => ((item?.raw || item)?.expirationDate || null) === nearest);
+}
+
+export function computePutCallRatioMetrics(items) {
+  const rows = pickNearestExpirationItems(items);
+  const calls = rows.filter((item) => ((item?.raw || item)?.optionType || "").toLowerCase() === "call");
+  const puts = rows.filter((item) => ((item?.raw || item)?.optionType || "").toLowerCase() === "put");
+  const sumField = (arr, field) => arr.reduce((acc, item) => {
+    const value = Number((item?.raw || item)?.[field]);
+    return acc + (Number.isFinite(value) ? value : 0);
+  }, 0);
+
+  const callVolume = sumField(calls, "volume");
+  const putVolume = sumField(puts, "volume");
+  const callOI = sumField(calls, "openInterest");
+  const putOI = sumField(puts, "openInterest");
+
+  return {
+    putCallRatio: {
+      volume: callVolume > 0 ? round(putVolume / callVolume, 4) : null,
+      openInterest: callOI > 0 ? round(putOI / callOI, 4) : null,
+      callVolume,
+      putVolume,
+      callOI,
+      putOI,
+    },
+  };
+}
+
+// ── CDP-backed fetch helpers usable by market orchestration ──────────────────
+
+async function fetchOptionChainRows({ symbol, expiration, port }) {
+  const { client } = await connectBarchartPage(symbol, port);
+  try {
+    await navigate(client, getQuoteUrl(symbol).replace("/overview", "/options"), 4000);
+    const result = await evaluate(client, `
+      (async () => {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const headers = csrf ? { 'X-CSRF-TOKEN': csrf } : {};
+        const fields = ['strikePrice', 'volume', 'openInterest', 'expirationDate', 'optionType'].join(',');
+        let url = '/proxies/core-api/v1/options/chain?symbol=' + encodeURIComponent(${JSON.stringify(symbol)})
+          + '&fields=' + fields + '&raw=1';
+        if (${JSON.stringify(expiration)}) {
+          url += '&expirationDate=' + encodeURIComponent(${JSON.stringify(expiration)});
+        }
+        const resp = await fetch(url, { credentials: 'include', headers });
+        const text = await resp.text();
+        return { ok: resp.ok, status: resp.status, text };
+      })()
+    `);
+    if (!result?.ok) return [];
+    try {
+      const json = JSON.parse(String(result?.text || ""));
+      return Array.isArray(json?.data) ? json.data : [];
+    } catch {
+      return [];
+    }
+  } finally {
+    await client.close();
+  }
+}
+
+export async function fetchBarchartPutCallRatio(flags) {
+  const symbol = String(flags.symbol || "").trim().toUpperCase();
+  const expiration = flags.expiration ? String(flags.expiration).trim() : null;
+  const port = getBarchartPort(flags.port);
+  if (!symbol) throw new Error("Missing required --symbol");
+  if (expiration && !/^\d{4}-\d{2}-\d{2}$/.test(expiration)) {
+    throw new Error("Invalid --expiration. Use YYYY-MM-DD format");
+  }
+
+  const chainRows = await fetchOptionChainRows({ symbol, expiration, port });
+  const metrics = computePutCallRatioMetrics(chainRows);
+  const nearestRows = pickNearestExpirationItems(chainRows);
+  return {
+    ok: true,
+    symbol,
+    expiration: expiration ?? ((nearestRows[0]?.raw || nearestRows[0])?.expirationDate ?? null),
+    ...metrics,
+  };
+}
