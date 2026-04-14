@@ -20,10 +20,12 @@ export function mergeSentimentResults(succeeded, symbol) {
     sources.push(name);
 
     if (name === "xueqiu") {
-      hotRank = data.followers ?? null;
-    } else if (name === "reddit" || name === "zhihu" || name === "weibo") {
-      mentions += Number(data.count ?? 0);
+      mentions += Number(data.discussions ?? 0);
+      hotRank = data.hotRank ?? hotRank;
+      continue;
     }
+
+    mentions += Number(data.count ?? 0);
   }
 
   // Score: without NLP, default to 0 (neutral). Agents can apply LLM for scoring.
