@@ -34,8 +34,27 @@ export async function getWhaleStreamTarget(port = DEFAULT_PORT) {
 
 export async function connectWhaleStreamPage(port = DEFAULT_PORT) {
   const actualPort = getWhaleStreamPort(port);
-  const target = await getWhaleStreamTarget(actualPort);
-  const client = await connectToTarget(target);
+  const existing = await findPageTarget(
+    (target) => /whalestream/i.test(target.url) || /whalestream/i.test(target.title || ""),
+    actualPort,
+  );
+  const candidates = [];
+  if (existing) candidates.push(existing);
+  if (!existing) candidates.push(await createTarget(getWhaleStreamUrl(), actualPort));
+
+  let lastError = null;
+  for (const target of candidates) {
+    try {
+      const client = await connectToTarget(target);
+      await autoMinimizeChromeForPort(actualPort);
+      return { client, target, port: actualPort };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const freshTarget = await createTarget(getWhaleStreamUrl(), actualPort);
+  const client = await connectToTarget(freshTarget);
   await autoMinimizeChromeForPort(actualPort);
-  return { client, target, port: actualPort };
+  return { client, target: freshTarget, port: actualPort, recoveredFrom: lastError?.message || null };
 }

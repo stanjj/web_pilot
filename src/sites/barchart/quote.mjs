@@ -11,31 +11,36 @@ export async function fetchBarchartQuote(flags) {
   }
 
   const port = getBarchartPort(flags.port);
-  const { client } = await connectBarchartPage(symbol, port);
+  let lastError = null;
 
-  try {
-    await navigate(client, getQuoteUrl(symbol), 3500);
-    const result = await evaluate(client, `
-      (() => {
-        return {
-          text: document.body.innerText || '',
-          title: document.title,
-          url: location.href
-        };
-      })()
-    `);
+  for (const fresh of [false, true]) {
+    const { client } = await connectBarchartPage(symbol, port, { fresh });
+    try {
+      await navigate(client, getQuoteUrl(symbol), 3500);
+      const result = await evaluate(client, `
+        (() => {
+          return {
+            text: document.body.innerText || '',
+            title: document.title,
+            url: location.href
+          };
+        })()
+      `);
 
-    const normalized = parseBarchartQuoteDocument({
-      symbol,
-      text: result?.text,
-      title: result?.title,
-      url: result?.url,
-    });
-
-    return normalized;
-  } finally {
-    await client.close();
+      return parseBarchartQuoteDocument({
+        symbol,
+        text: result?.text,
+        title: result?.title,
+        url: result?.url,
+      });
+    } catch (error) {
+      lastError = error;
+    } finally {
+      await client.close();
+    }
   }
+
+  throw lastError;
 }
 
 export async function runBarchartQuote(flags) {

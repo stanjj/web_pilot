@@ -45,6 +45,7 @@ test("buildRegistry resolves newly added commands", () => {
   assert.ok(reg.resolve("browser", "smoke"), "browser smoke");
   assert.ok(reg.resolve("boss", "open-thread"), "boss open-thread");
   assert.ok(reg.resolve("boss", "login-state"), "boss login-state");
+  assert.ok(reg.resolve("linkedin", "login-state"), "linkedin login-state");
   assert.ok(reg.resolve("boss", "triage"), "boss triage");
   assert.ok(reg.resolve("barchart", "put-call-ratio"), "barchart put-call-ratio");
   assert.ok(reg.resolve("yahoo-finance", "chain-snapshot"), "yahoo-finance chain-snapshot");
@@ -53,6 +54,7 @@ test("buildRegistry resolves newly added commands", () => {
   assert.ok(reg.resolve("tradingview", "quote"), "tradingview quote");
   assert.ok(reg.resolve("tradingview", "historical-flow"), "tradingview historical-flow");
   assert.ok(reg.resolve("tradingview", "live-flow"), "tradingview live-flow");
+  assert.ok(reg.resolve("twitter", "login-state"), "twitter login-state");
 });
 
 test("buildRegistry handlers are async functions", () => {

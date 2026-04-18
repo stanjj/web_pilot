@@ -30,8 +30,27 @@ export async function getUnusualWhalesTarget(port = DEFAULT_PORT) {
 
 export async function connectUnusualWhalesPage(port = DEFAULT_PORT) {
   const actualPort = getUnusualWhalesPort(port);
-  const target = await getUnusualWhalesTarget(actualPort);
-  const client = await connectToTarget(target);
+  const existing = await findPageTarget(
+    (target) => /unusualwhales/i.test(target.url) || /unusual whales/i.test(target.title || ""),
+    actualPort,
+  );
+  const candidates = [];
+  if (existing) candidates.push(existing);
+  if (!existing) candidates.push(await createTarget(getUnusualWhalesUrl(), actualPort));
+
+  let lastError = null;
+  for (const target of candidates) {
+    try {
+      const client = await connectToTarget(target);
+      await autoMinimizeChromeForPort(actualPort);
+      return { client, target, port: actualPort };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const freshTarget = await createTarget(getUnusualWhalesUrl(), actualPort);
+  const client = await connectToTarget(freshTarget);
   await autoMinimizeChromeForPort(actualPort);
-  return { client, target, port: actualPort };
+  return { client, target: freshTarget, port: actualPort, recoveredFrom: lastError?.message || null };
 }

@@ -20,7 +20,7 @@ This file tracks the next work for `web-pilot`.
 
 ## Live Verification Snapshot
 
-Last checked: `2026-04-08`
+Last checked: `2026-04-13`
 
 - TradingView is live-verified end-to-end:
   - `status` and `quote` run directly against public TradingView pages
@@ -40,13 +40,19 @@ Last checked: `2026-04-08`
   - `insiderfinance status` checks free flow GraphQL access
   - `unusual-whales status` checks the live free-flow network response
   - `whalestream status` checks top-options, dark-pool, and news access
+- `market scan` and `market drilldown` now sit on a return-first runtime layer instead of capturing child command stdout, which makes them a cleaner base for future finance combo/thesis workflows.
 - BOSS inbox workflow live-verified:
   - `boss inbox`
   - `boss triage`
 - Additional logged-in commands live-verified:
   - `linkedin search`
+  - `linkedin login-state`
   - `chatgpt status`
   - `chatgpt read`
+- Session-gated commands re-verified:
+  - `twitter login-state` correctly reports `Login required`
+  - `twitter search` now fails closed with `needsLogin: true` on the X login gate
+  - `twitter trending` now fails with an explicit logged-in API gate message instead of a vague request failure
 - `discord-app search` now auto-selects the first visible server when no searchable channel is open, so `--query` no longer requires a manual pre-click into a server/channel first.
 - `notion` now prefers an already-open workspace/app tab over the marketing root when multiple Notion tabs exist.
 - `notion status` now reports both the marketing root and onboarding pages as `Login or workspace required` instead of false `Connected`, and `notion search`/`sidebar` now fail closed until a real workspace page is open in the shared browser.
@@ -72,7 +78,7 @@ Last checked: `2026-04-08`
 - [ ] Confirm all commands behave correctly if the browser is already minimized.
 - [ ] Confirm behavior when the shared browser profile is missing or corrupted.
 - [x] Handle the case where the CDP endpoint is alive but no attachable page targets exist.
-- [ ] Add better error messages for:
+- [x] Add better error messages for:
   - browser not running
   - login required
   - anti-bot challenge
@@ -88,16 +94,16 @@ Goal: make BOSS fully practical from this repo.
 - [x] Add `boss unread-count` extraction from the left conversation list.
 - [x] Add `boss unread-by-thread` extraction.
 - [x] Add `boss mark-needs-reply` style logic output for triage.
-- [ ] Improve thread matching:
+- [x] Improve thread matching:
   - exact company
   - exact recruiter
   - fuzzy name/company match
-- [ ] Improve message parsing for:
+- [x] Improve message parsing for:
   - system prompts
   - attachments/resume hints
   - placeholder items like `您正在与Boss...沟通`
 - [x] Add explicit login-state detection for BOSS home/chat/search pages.
-- [ ] Add a one-command workflow for:
+- [x] Add a one-command workflow for:
   - list recent chats
   - identify reply-needed threads
   - open one thread
@@ -114,7 +120,7 @@ Goal: make BOSS fully practical from this repo.
   - expiry
   - strike range
   - moneyness
-- [ ] Add symbol-specific flow analysis workflow instead of only global unusual-flow scans.
+- [x] Add symbol-specific flow analysis workflow instead of only global unusual-flow scans.
 - [x] Add a `barchart flow-symbol` command.
 - [x] Add better interpretation fields for flow:
   - premium rank
@@ -124,13 +130,13 @@ Goal: make BOSS fully practical from this repo.
 - [x] Add `put-call-ratio` extraction.
 - [x] Add `gamma-exposure` extraction.
 - [x] Add `max-pain` extraction.
-- [ ] Add `vol-skew` extraction.
-- [ ] Add a compact summary mode for fast market checks.
+- [x] Add `vol-skew` extraction.
+- [x] Add a compact summary mode for fast market checks.
 
 ### Yahoo Finance
 
 - [x] Add expiration selection for `yahoo-finance options`.
-- [ ] Add quote fallback parsing if the current page/API shape changes.
+- [x] Add quote fallback parsing if the current page/API shape changes.
 - [x] Add richer chain output:
   - implied volatility
   - open interest
@@ -143,8 +149,8 @@ Goal: make BOSS fully practical from this repo.
 
 ### Xueqiu
 
-- [ ] Add another useful command beyond `hot-stock`.
-- [ ] Candidate commands:
+- [x] Add another useful command beyond `hot-stock`.
+- [x] Candidate commands:
   - search
   - quote/stock page summary
   - watchlist-like hot topic extraction
@@ -155,13 +161,13 @@ These sites are connected but mostly shallow today.
 
 ### Chat / AI Tools
 
-- [ ] Add at least one meaningful command each for:
+- [x] Add at least one meaningful command each for:
   - `chatgpt`
   - `codex`
   - `cursor`
   - `chatwise`
   - `grok`
-- [ ] Decide what "useful" means per site:
+- [x] Decide what "useful" means per site:
   - status only
   - inbox/session info
   - conversation listing
@@ -169,17 +175,17 @@ These sites are connected but mostly shallow today.
 
 ### Productivity / Communication
 
-- [ ] Add meaningful commands for:
+- [x] Add meaningful commands for:
   - `notion`
   - `discord-app`
   - `feishu`
   - `wechat`
-- [ ] For `wechat`, add clear login-state reporting and post-login page extraction.
-- [ ] For `discord-app`, add:
+- [x] For `wechat`, add clear login-state reporting and post-login page extraction.
+- [x] For `discord-app`, add:
   - guild list
   - current channel info
   - unread indicator extraction if possible
-- [ ] For `notion`, add:
+- [x] For `notion`, add:
   - current workspace/page title
   - sidebar page list extraction
 
@@ -189,17 +195,17 @@ These already have at least one useful command, but coverage is still shallow.
 
 ### Add One More Useful Command For Each
 
-- [ ] `reddit`: search or frontpage
-- [ ] `hackernews`: new or ask/show listings
-- [ ] `reuters`: latest headlines or topic page
-- [ ] `bbc`: category-specific headlines
-- [ ] `v2ex`: topic detail by ID
-- [ ] `weibo`: hot detail page extraction
-- [ ] `bilibili`: search
-- [ ] `youtube`: channel or video detail parsing
-- [ ] `smzdm`: hot deals page
-- [ ] `xiaoyuzhou`: podcast episodes listing
-- [ ] `zhihu`: question or hot item detail
+- [x] `reddit`: search or frontpage
+- [x] `hackernews`: new or ask/show listings
+- [x] `reuters`: latest headlines or topic page
+- [x] `bbc`: category-specific headlines
+- [x] `v2ex`: topic detail by ID
+- [x] `weibo`: hot detail page extraction
+- [x] `bilibili`: search
+- [x] `youtube`: channel or video detail parsing
+- [x] `smzdm`: hot deals page
+- [x] `xiaoyuzhou`: podcast episodes listing
+- [x] `zhihu`: question or hot item detail
 
 ## Priority 5: Auth-Walled Or Blocked Sites
 
@@ -207,15 +213,15 @@ These need a more deliberate plan.
 
 ### LinkedIn
 
-- [ ] Improve auth-wall detection.
-- [ ] Add post-login search results parsing.
-- [ ] Add current-user/login-state command.
+- [x] Improve auth-wall detection.
+- [x] Add post-login search results parsing.
+- [x] Add current-user/login-state command.
 
 ### Twitter
 
-- [ ] Improve logged-out failure message.
+- [x] Improve logged-out failure message.
 - [ ] Add post-login trending or search workflow.
-- [ ] Add current-user/login-state command.
+- [x] Add current-user/login-state command.
 
 ### Xiaohongshu
 

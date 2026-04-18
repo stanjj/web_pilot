@@ -71,7 +71,7 @@ export async function runZhihuSearch(flags) {
     `);
 
     if (!result?.ok) {
-      process.stdout.write(`${JSON.stringify({
+      const errorResult = {
         ok: false,
         keyword,
         status: result?.status ?? null,
@@ -80,12 +80,13 @@ export async function runZhihuSearch(flags) {
           ? "Zhihu search requires a logged-in session in the shared agent browser."
           : "Zhihu search request failed.",
         body: result?.body || "",
-      }, null, 2)}\n`);
+      };
+      process.stdout.write(`${JSON.stringify(errorResult, null, 2)}\n`);
       process.exitCode = result?.needsLogin ? 2 : 1;
-      return;
+      return errorResult;
     }
 
-    process.stdout.write(`${JSON.stringify({
+    const successResult = {
       ok: true,
       keyword,
       count: result.count,
@@ -94,7 +95,9 @@ export async function runZhihuSearch(flags) {
         title: stripHtml(item.title),
         excerpt: stripHtml(item.excerpt).slice(0, 100),
       })),
-    }, null, 2)}\n`);
+    };
+    process.stdout.write(`${JSON.stringify(successResult, null, 2)}\n`);
+    return successResult;
   } finally {
     await client.close();
   }

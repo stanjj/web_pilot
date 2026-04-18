@@ -82,6 +82,70 @@ export class TimeoutError extends CliError {
   }
 }
 
+export class LoginRequiredError extends CliError {
+  constructor(site, options = {}) {
+    super(
+      `${site} requires a logged-in session in the shared agent browser.`,
+      "LOGIN_REQUIRED",
+      {
+        exitCode: EXIT_CODES.NAVIGATION,
+        hint: `Log in to ${site} inside the shared browser, then retry.`,
+        ...options,
+      },
+    );
+    this.name = "LoginRequiredError";
+    this.site = site;
+  }
+}
+
+export class AntiBotError extends CliError {
+  constructor(site, options = {}) {
+    super(
+      `${site} is showing an anti-bot challenge (CAPTCHA / Cloudflare / hCaptcha).`,
+      "ANTI_BOT_CHALLENGE",
+      {
+        exitCode: EXIT_CODES.NAVIGATION,
+        hint: `Open ${site} in the shared browser and solve the challenge manually, then retry.`,
+        ...options,
+      },
+    );
+    this.name = "AntiBotError";
+    this.site = site;
+  }
+}
+
+export class AuthWallError extends CliError {
+  constructor(site, options = {}) {
+    super(
+      `${site} returned an authorization wall — the current session lacks sufficient permissions.`,
+      "AUTH_WALL",
+      {
+        exitCode: EXIT_CODES.NAVIGATION,
+        hint: `Check ${site} subscription or permissions in the shared browser.`,
+        ...options,
+      },
+    );
+    this.name = "AuthWallError";
+    this.site = site;
+  }
+}
+
+export class ApiSchemaDriftError extends CliError {
+  constructor(site, options = {}) {
+    super(
+      `${site} API or page structure has changed — the parser could not extract expected data.`,
+      "API_SCHEMA_DRIFT",
+      {
+        exitCode: EXIT_CODES.PARSE,
+        hint: `The ${site} page layout or API response shape may have changed. Check for updates.`,
+        ...options,
+      },
+    );
+    this.name = "ApiSchemaDriftError";
+    this.site = site;
+  }
+}
+
 /**
  * Normalize any thrown value into a consistent error envelope.
  * @param {unknown} err

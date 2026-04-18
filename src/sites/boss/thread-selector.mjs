@@ -5,6 +5,47 @@ function normalizeBossThreadText(value) {
     .toLowerCase();
 }
 
+function editDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+function fuzzyScore(query, text) {
+  if (!query || !text) return Infinity;
+  const dist = editDistance(query, text);
+  const maxLen = Math.max(query.length, text.length);
+  return maxLen === 0 ? 0 : dist / maxLen;
+}
+
+function bestFuzzyScoreForItem(query, item) {
+  const fields = [
+    normalizeBossThreadText(item.name),
+    normalizeBossThreadText(item.company),
+    normalizeBossThreadText(item.title),
+    [normalizeBossThreadText(item.name), normalizeBossThreadText(item.company)].filter(Boolean).join(" "),
+    [normalizeBossThreadText(item.company), normalizeBossThreadText(item.name)].filter(Boolean).join(" "),
+  ].filter(Boolean);
+  let best = Infinity;
+  for (const field of fields) {
+    const score = fuzzyScore(query, field);
+    if (score < best) best = score;
+  }
+  return best;
+}
+
 function buildCandidatePreview(item) {
   return {
     domIndex: item.domIndex,
@@ -101,7 +142,7 @@ export function formatBossThreadSelectionError(result) {
 }
 
 export function isBossThreadSelectionSafeForSend(selection) {
-  return selection?.ok === true && (selection.matchType === "index" || selection.matchType === "exact");
+  return selection?.ok === true && (selection.matchType === "index" || selection.matchType === "exact" || selection.matchType === "fuzzy");
 }
 
 export function resolveBossThreadSelection(items, { index, name } = {}) {
@@ -145,6 +186,19 @@ export function resolveBossThreadSelection(items, { index, name } = {}) {
   const substringMatches = threads.filter((item) => buildSearchFields(item).some((field) => field.includes(query)));
   if (substringMatches.length === 1) return createSuccess(substringMatches[0], "substring");
   if (substringMatches.length > 1) return createAmbiguous(name, substringMatches);
+
+  // Stage 5: fuzzy match — edit distance ratio below 0.35 threshold
+  const FUZZY_THRESHOLD = 0.35;
+  const scored = threads
+    .map((item) => ({ item, score: bestFuzzyScoreForItem(query, item) }))
+    .filter(({ score }) => score <= FUZZY_THRESHOLD)
+    .sort((a, b) => a.score - b.score);
+
+  if (scored.length === 1) return createSuccess(scored[0].item, "fuzzy");
+  if (scored.length > 1 && scored[0].score < scored[1].score - 0.05) {
+    return createSuccess(scored[0].item, "fuzzy");
+  }
+  if (scored.length > 1) return createAmbiguous(name, scored.map(({ item }) => item));
 
   return {
     ok: false,

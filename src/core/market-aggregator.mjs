@@ -7,12 +7,13 @@
  */
 function withTimeout(promise, ms) {
   if (!ms) return promise;
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms),
-    ),
-  ]);
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => { clearTimeout(id); resolve(value); },
+      (err) => { clearTimeout(id); reject(err); },
+    );
+  });
 }
 
 /**
